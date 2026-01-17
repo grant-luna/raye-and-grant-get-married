@@ -26,13 +26,14 @@ export default function Page() {
             }}
           >
             <Image
-              src="/watercolor-garden.png"
-              alt="Watercolor garden header"
+              src="/koi-bright.png"
+              alt="koi fish"
               fill
               priority
               style={{
                 objectFit: "contain",
                 objectPosition: "center",
+                opacity: "70%",
               }}
             />
           </div>
