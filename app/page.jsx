@@ -53,8 +53,7 @@ export default function Page() {
           >
             <h1
               className="font-header"
-              style={{
-                fontSize: "clamp(38px, 5vw, 58px)", // ⬅️ slightly smaller
+              style={{                
                 lineHeight: 1.05,
                 marginBottom: 12, // ⬅️ tighter
               }}

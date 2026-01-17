@@ -20,6 +20,8 @@ body {
 .font-header {
   font-family: var(--font-header) !important;
   font-weight: 400;
+  font-size: 64px;  
+  line-height: 1.05;
 }
 
 /* Subheaders */
