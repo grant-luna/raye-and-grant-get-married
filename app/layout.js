@@ -1,3 +1,4 @@
+import SiteNavbar from "@/app/components/SiteNavbar";
 import "bootstrap/dist/css/bootstrap.min.css";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -46,7 +47,10 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${bodyFont.variable} ${subheaderFont.variable} ${headerFont.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <SiteNavbar />
+        {children}
+      </body>
     </html>
   );
 }
