@@ -31,7 +31,8 @@ export default function SiteNavbar() {
           <Nav
             className="mx-auto"   // ✅ CENTERED
             style={{
-              gap: 175,
+              columnGap: 150,   // ✅ horizontal spacing only
+              rowGap: 0,       // ✅ no vertical spacing
               alignItems: "center",
             }}
           >
