@@ -1,26 +1,186 @@
-@import "tailwindcss";
+/* =========================
+   GLOBAL RESET / BASE
+   ========================= */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+  color: #544f44;
+  background-color: #ffffff;
+  line-height: 1.6;
+}
+
+/* =========================
+   TYPOGRAPHY SYSTEM
+   ========================= */
+
+/* Script headers (names, hero text) */
+.font-header {
+  font-family: var(--font-header) !important;
+  font-weight: 400;
+}
+
+/* Subheaders / section titles */
+.font-subheader {
+  font-family: var(--font-subheader) !important;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Ensure Bootstrap headings don't override fonts */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-subheader);
+  font-weight: 600;
+  color: #544f44;
+}
+
+/* Body text helpers */
+.text-light {
+  font-weight: 300;
+}
+
+.text-bold {
+  font-weight: 600;
+}
+
+/* =========================
+   BOOTSTRAP OVERRIDES
+   ========================= */
+
+.btn {
+  font-family: var(--font-body);
+  border-radius: 999px;
+  padding: 10px 26px;
+  font-size: 16px;
+}
+
+/* Primary button */
+.btn-primary {
+  background-color: #544f44;
+  border-color: #544f44;
+  color: #ffffff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #3f3a32;
+  border-color: #3f3a32;
+  color: #ffffff;
+}
+
+/* =========================
+   HOME PAGE LAYOUT
+   ========================= */
+
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 32px 0;
+}
+
+.home-shell {
+  max-width: 760px;
+}
+
+/* Watercolor header image */
+.home-art {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 10px 10px 0 0;
+}
+
+.home-art-img {
+  object-fit: cover;
+}
+
+/* Paper card */
+.home-card {
+  background: #fbfaf7;
+  padding: 40px 28px 46px;
+  border-radius: 0 0 10px 10px;
+  text-align: center;
+}
+
+/* Script title */
+.home-title {
+  font-size: 56px;
+  line-height: 1.05;
+  margin: 6px 0 18px;
+}
+
+/* Subheader line */
+.home-subtitle {
+  font-size: 15px;
+  max-width: 560px;
+  margin: 0 auto 22px;
+}
+
+/* Body copy */
+.home-body p {
+  font-size: 18px;
+  margin: 0 0 14px;
+}
+
+/* Closing sentence */
+.home-closing {
+  margin: 26px 0 10px;
+  font-size: 18px;
+}
+
+/* Signature */
+.home-signature {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.home-dash {
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+.home-names {
+  font-size: 56px;
+  line-height: 1;
+}
+
+/* CTA */
+.home-cta {
+  margin-top: 28px;
+}
+
+/* =========================
+   MOBILE TWEAKS
+   ========================= */
+
+@media (max-width: 576px) {
+  .home-card {
+    padding: 34px 18px 40px;
+  }
+
+  .home-title,
+  .home-names {
+    font-size: 44px;
+  }
+
+  .home-art {
+    height: 180px;
+  }
 }
