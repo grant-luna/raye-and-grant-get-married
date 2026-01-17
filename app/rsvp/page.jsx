@@ -3,11 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Container from "react-bootstrap/Container";
 
-/**
- * MOCK DB SHAPE (matches your Neon tables)
- * parties: { id, name }
- * guests:  { id, first_name, last_name, party_id }
- */
 const MOCK_PARTIES = [
   { id: "p1", name: "Luna Party" },
   { id: "p2", name: "Smith Party" },
@@ -24,17 +19,8 @@ function fullName(g) {
   return `${g.first_name} ${g.last_name}`.trim();
 }
 
-/**
- * Frontend placeholder similarity (0..1)
- * Later: server-side similarity (pg_trgm / levenshtein) and return:
- * { party, guests, confidence, matchedGuest }
- */
 function similarityScore(input, candidate) {
-  const clean = (s) =>
-    s
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, "")
-      .trim();
+  const clean = (s) => s.toLowerCase().replace(/[^a-z\s]/g, "").trim();
 
   const A = clean(input);
   const B = clean(candidate);
@@ -52,7 +38,6 @@ function similarityScore(input, candidate) {
 
   const tokenScore = overlap / Math.max(aSet.size, bSet.size);
 
-  // prefix bias helps partial typing
   const prefixLen = Math.min(A.length, B.length);
   let prefixMatch = 0;
   for (let i = 0; i < prefixLen; i++) {
@@ -71,45 +56,56 @@ function pct(n) {
 export default function RSVPPage() {
   const [step, setStep] = useState("search"); // "search" | "party"
   const [query, setQuery] = useState("");
-
   const [match, setMatch] = useState(null);
-  // match = { party, guests, matchedGuest, confidence }
-
   const [selectedIds, setSelectedIds] = useState(() => new Set());
 
-  // Arrow-after-text overlay (clickable + mobile-safe)
+  // refs for arrow positioning
   const mirrorRef = useRef(null);
   const arrowBtnRef = useRef(null);
+  const inputRef = useRef(null);
 
   const showArrow = query.trim().length > 0;
-
-  // Compute position for arrow after centered text, with controllable spacing.
-  // This version is stable because it "rides" in a centered overlay.
   const ARROW_GAP_PX = 18;
 
+  // ✅ Position arrow after centered text, but clamp so it can't drift off input on mobile
   useEffect(() => {
-    if (!mirrorRef.current || !arrowBtnRef.current) return;
+    if (!mirrorRef.current || !arrowBtnRef.current || !inputRef.current) return;
 
-    const textWidth = mirrorRef.current.offsetWidth;
+    const positionArrow = () => {
+      const textWidth = mirrorRef.current?.offsetWidth ?? 0;
+      const inputWidth = inputRef.current?.offsetWidth ?? 0;
 
-    // Move arrow to the end of centered text + gap
-    arrowBtnRef.current.style.transform = showArrow
-      ? `translateX(${textWidth / 2 + ARROW_GAP_PX}px)`
-      : "translateX(0)";
-  }, [query, showArrow]);
+      // Desired: end of centered text + gap
+      const desiredOffset = textWidth / 2 + ARROW_GAP_PX;
+
+      // Clamp so arrow stays inside the input visual area
+      const paddingSide = 16; // matches input padding horizontal
+      const maxOffset = Math.max(0, inputWidth / 2 - paddingSide - 10);
+
+      const offset = Math.min(desiredOffset, maxOffset);
+
+      arrowBtnRef.current.style.left = "50%";
+      arrowBtnRef.current.style.top = "50%";
+      arrowBtnRef.current.style.transform = showArrow
+        ? `translate(-50%, -50%) translateX(${offset}px)`
+        : "translate(-50%, -50%) translateX(0)";
+    };
+
+    positionArrow();
+    const raf = requestAnimationFrame(positionArrow);
+    return () => cancelAnimationFrame(raf);
+  }, [query, showArrow, step]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
 
-    // Later: replace with server action returning best party match
     let best = null;
     for (const g of MOCK_GUESTS) {
       const score = similarityScore(q, fullName(g));
       if (!best || score > best.score) best = { guest: g, score };
     }
-
     if (!best) return;
 
     const party =
@@ -127,9 +123,7 @@ export default function RSVPPage() {
       confidence: best.score,
     });
 
-    // Default: select everyone in party (common RSVP flow)
     setSelectedIds(new Set(partyGuests.map((g) => g.id)));
-
     setStep("party");
   };
 
@@ -137,8 +131,7 @@ export default function RSVPPage() {
     setStep("search");
     setMatch(null);
     setSelectedIds(new Set());
-    // keep query so they can edit quickly:
-    // setQuery("");
+    // keep query so they can edit
   };
 
   const toggleSelected = (id) => {
@@ -152,10 +145,7 @@ export default function RSVPPage() {
 
   const handleContinue = () => {
     if (!match) return;
-
     const selectedGuests = match.guests.filter((g) => selectedIds.has(g.id));
-
-    // Later: submit selected guests RSVP via server action
     console.log("Party:", match.party);
     console.log("Selected guests:", selectedGuests);
   };
@@ -177,20 +167,8 @@ export default function RSVPPage() {
         alignItems: "flex-start",
       }}
     >
-      <Container
-        style={{
-          paddingTop: 90,
-          paddingBottom: 80,
-          textAlign: "center",
-        }}
-      >
-        <h1
-          className="font-header"
-          style={{
-            fontSize: "clamp(56px, 6vw, 72px)",
-            marginBottom: 18,
-          }}
-        >
+      <Container style={{ paddingTop: 90, paddingBottom: 80, textAlign: "center" }}>
+        <h1 className="font-header" style={{ fontSize: "clamp(56px, 6vw, 72px)", marginBottom: 18 }}>
           RSVP
         </h1>
 
@@ -198,25 +176,16 @@ export default function RSVPPage() {
           <>
             <p
               className="font-subheader"
-              style={{
-                fontSize: 14,
-                letterSpacing: "0.18em",
-                opacity: 0.85,
-                marginBottom: 36,
-              }}
+              style={{ fontSize: 14, letterSpacing: "0.18em", opacity: 0.85, marginBottom: 36 }}
             >
               Please enter your full name
             </p>
 
             <form
               onSubmit={handleSearchSubmit}
-              style={{
-                maxWidth: 520,
-                margin: "0 auto",
-                position: "relative",
-              }}
+              style={{ maxWidth: 520, margin: "0 auto", position: "relative" }}
             >
-              {/* Hidden mirror text for measuring width */}
+              {/* Mirror text for measuring width */}
               <span
                 ref={mirrorRef}
                 aria-hidden
@@ -234,6 +203,7 @@ export default function RSVPPage() {
               </span>
 
               <input
+                ref={inputRef}
                 type="text"
                 name="fullName"
                 value={query}
@@ -254,74 +224,40 @@ export default function RSVPPage() {
                 }}
               />
 
-              {/* Centered overlay that holds the arrow "inline" */}
-              <div
+              {/* ✅ Only the button is positioned — no overlay blocking typing */}
+              <button
+                ref={arrowBtnRef}
+                type="submit"
+                aria-label="Search"
                 style={{
                   position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  width: "100%",
-                  pointerEvents: "none", // allow typing without weird overlay clicks
+                  opacity: showArrow ? 1 : 0,
+                  pointerEvents: showArrow ? "auto" : "none",
+                  transition: "opacity 0.25s ease, transform 0.25s ease",
+                  background: "none",
+                  border: "none",
+                  fontSize: 22,
+                  color: "#544f44",
+                  cursor: "pointer",
+                  lineHeight: 1,
+                  padding: 0,
                 }}
               >
-                <button
-                  ref={arrowBtnRef}
-                  type="submit"
-                  aria-label="Search"
-                  style={{
-                    pointerEvents: showArrow ? "auto" : "none", // button still clickable
-                    background: "none",
-                    border: "none",
-                    fontSize: 22,
-                    color: "#544f44",
-                    opacity: showArrow ? 1 : 0,
-                    transition: "opacity 0.25s ease, transform 0.25s ease",
-                    cursor: "pointer",
-                    lineHeight: 1,
-                    padding: 0,
-                  }}
-                >
-                  →
-                </button>
-              </div>
+                →
+              </button>
             </form>
           </>
         ) : (
           <>
-            <p
-              className="font-subheader"
-              style={{
-                fontSize: 14,
-                letterSpacing: "0.18em",
-                opacity: 0.85,
-                marginBottom: 10,
-              }}
-            >
+            <p className="font-subheader" style={{ fontSize: 14, letterSpacing: "0.18em", opacity: 0.85, marginBottom: 10 }}>
               {confidenceText}
             </p>
 
-            <p
-              className="font-subheader"
-              style={{
-                fontSize: 14,
-                letterSpacing: "0.18em",
-                opacity: 0.85,
-                marginBottom: 26,
-              }}
-            >
+            <p className="font-subheader" style={{ fontSize: 14, letterSpacing: "0.18em", opacity: 0.85, marginBottom: 26 }}>
               Select the members of your party that will be attending
             </p>
 
-            <div
-              className="font-subheader"
-              style={{
-                fontSize: 14,
-                letterSpacing: "0.16em",
-                opacity: 0.65,
-                marginBottom: 22,
-              }}
-            >
+            <div className="font-subheader" style={{ fontSize: 14, letterSpacing: "0.16em", opacity: 0.65, marginBottom: 22 }}>
               {match?.party?.name}
               {match?.confidence != null ? `  ·  ${pct(match.confidence)}%` : ""}
             </div>
@@ -353,16 +289,7 @@ export default function RSVPPage() {
                         flex: "0 0 auto",
                       }}
                     />
-
-                    <span
-                      className="font-subheader"
-                      style={{
-                        fontSize: 22,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: "#544f44",
-                      }}
-                    >
+                    <span className="font-subheader" style={{ fontSize: 22, letterSpacing: "0.08em", textTransform: "uppercase", color: "#544f44" }}>
                       {fullName(g)}
                     </span>
                   </label>
@@ -370,15 +297,7 @@ export default function RSVPPage() {
               })}
             </div>
 
-            <div
-              style={{
-                marginTop: 26,
-                display: "flex",
-                justifyContent: "center",
-                gap: 14,
-                flexWrap: "wrap",
-              }}
-            >
+            <div style={{ marginTop: 26, display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
               <button
                 type="button"
                 className="btn btn-primary"
