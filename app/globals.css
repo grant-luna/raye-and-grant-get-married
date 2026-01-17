@@ -16,12 +16,44 @@ body {
   line-height: 1.6;
 }
 
-/* Script headers */
+/* Script headers (base) */
 .font-header {
   font-family: var(--font-header) !important;
   font-weight: 400;
-  font-size: 64px;  
+  font-size: 64px;
   line-height: 1.05;
+}
+
+/* Size variants */
+.font-header--hero {
+  font-size: 72px;
+}
+
+.font-header--medium {
+  font-size: 56px;
+}
+
+.font-header--small {
+  font-size: 48px;
+}
+
+/* Mobile tuning (optional but recommended) */
+@media (max-width: 576px) {
+  .font-header {
+    font-size: 52px;
+  }
+
+  .font-header--hero {
+    font-size: 60px;
+  }
+
+  .font-header--medium {
+    font-size: 48px;
+  }
+
+  .font-header--small {
+    font-size: 40px;
+  }
 }
 
 /* Subheaders */

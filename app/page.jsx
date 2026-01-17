@@ -52,7 +52,7 @@ export default function Page() {
             }}
           >
             <h1
-              className="font-header"
+              className="font-header font-header--hero"
               style={{                
                 lineHeight: 1.05,
                 marginBottom: 12, // ⬅️ tighter
