@@ -31,7 +31,7 @@ export default function SiteNavbar() {
           <Nav
             className="mx-auto"   // ✅ CENTERED
             style={{
-              gap: 28,
+              gap: 175,
               alignItems: "center",
             }}
           >
