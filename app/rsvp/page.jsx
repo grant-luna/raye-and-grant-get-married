@@ -53,11 +53,22 @@ function pct(n) {
   return Math.round(n * 100);
 }
 
+function formatNameList(names) {
+  const list = (names || []).filter(Boolean);
+  if (list.length === 0) return "";
+  if (list.length === 1) return list[0];
+  if (list.length === 2) return `${list[0]} and ${list[1]}`;
+  return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
+}
+
 export default function RSVPPage() {
-  const [step, setStep] = useState("search"); // "search" | "party"
+  const [step, setStep] = useState("search"); // "search" | "party" | "confirm"
   const [query, setQuery] = useState("");
   const [match, setMatch] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+
+  // ✅ decline confirmation prompt
+  const [showDeclinePrompt, setShowDeclinePrompt] = useState(false);
 
   // refs for arrow positioning
   const mirrorRef = useRef(null);
@@ -67,7 +78,6 @@ export default function RSVPPage() {
   const showArrow = query.trim().length > 0;
   const ARROW_GAP_PX = 18;
 
-  // Position arrow after centered text, clamped for mobile
   useEffect(() => {
     if (!mirrorRef.current || !arrowBtnRef.current || !inputRef.current) return;
 
@@ -121,8 +131,8 @@ export default function RSVPPage() {
       confidence: best.score,
     });
 
-    // ✅ Unchecked by default
     setSelectedIds(new Set());
+    setShowDeclinePrompt(false);
     setStep("party");
   };
 
@@ -130,7 +140,7 @@ export default function RSVPPage() {
     setStep("search");
     setMatch(null);
     setSelectedIds(new Set());
-    // keep query so they can edit
+    setShowDeclinePrompt(false);
   };
 
   const toggleSelected = (id) => {
@@ -142,13 +152,6 @@ export default function RSVPPage() {
     });
   };
 
-  const handleContinue = () => {
-    if (!match) return;
-    const selectedGuests = match.guests.filter((g) => selectedIds.has(g.id));
-    console.log("Party:", match.party);
-    console.log("Selected guests:", selectedGuests);
-  };
-
   const confidenceText = useMemo(() => {
     if (!match) return "";
     const c = match.confidence;
@@ -157,7 +160,38 @@ export default function RSVPPage() {
     return "We found a possible match";
   }, [match]);
 
-  // Shared “wedding site” typography feel
+  const selectedGuests = useMemo(() => {
+    if (!match) return [];
+    return match.guests.filter((g) => selectedIds.has(g.id));
+  }, [match, selectedIds]);
+
+  const selectedNames = useMemo(
+    () => selectedGuests.map(fullName),
+    [selectedGuests]
+  );
+
+  const partyNames = useMemo(() => {
+    if (!match) return [];
+    return match.guests.map(fullName);
+  }, [match]);
+
+  const confirmCopy = useMemo(() => {
+    const count = selectedNames.length;
+
+    if (count === 0) {
+      return {
+        line1: formatNameList(partyNames).toUpperCase(),
+        line2: "REGRETFULLY DECLINE",
+      };
+    }
+
+    return {
+      line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE`,
+      line2: "CELEBRATING WITH US!",
+    };
+  }, [selectedNames, partyNames]);
+
+  // Wedding typography
   const ink = "#544f44";
   const thinRule = "rgba(84, 79, 68, 0.35)";
 
@@ -201,6 +235,64 @@ export default function RSVPPage() {
     </span>
   );
 
+  const handleContinueFromParty = () => {
+    // ✅ If nobody selected, ask for confirmation before declining
+    if (selectedIds.size === 0) {
+      setShowDeclinePrompt(true);
+      return;
+    }
+    setShowDeclinePrompt(false);
+    setStep("confirm");
+  };
+
+  const confirmDecline = () => {
+    setShowDeclinePrompt(false);
+    setStep("confirm");
+  };
+
+  const handleContinueFromConfirm = () => {
+    if (!match) return;
+    const selected = match.guests.filter((g) => selectedIds.has(g.id));
+    console.log("Party:", match.party);
+    console.log("Selected guests:", selected);
+  };
+
+  const bottomNav = (
+    <div
+      style={{
+        maxWidth: 720,
+        margin: "34px auto 0",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 16,
+        paddingInline: 6,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          setShowDeclinePrompt(false);
+          if (step === "confirm") setStep("party");
+          else handleNotYou();
+        }}
+        style={navBtnBase}
+      >
+        <ArrowLine side="left" />
+        <span>{step === "confirm" ? "Not right? go back" : "Not you? go back"}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={step === "confirm" ? handleContinueFromConfirm : handleContinueFromParty}
+        style={navBtnBase}
+      >
+        <span>Continue</span>
+        <ArrowLine side="right" />
+      </button>
+    </div>
+  );
+
   return (
     <main
       style={{
@@ -240,7 +332,6 @@ export default function RSVPPage() {
               onSubmit={handleSearchSubmit}
               style={{ maxWidth: 520, margin: "0 auto", position: "relative" }}
             >
-              {/* Mirror text for measuring width */}
               <span
                 ref={mirrorRef}
                 aria-hidden
@@ -301,7 +392,7 @@ export default function RSVPPage() {
               </button>
             </form>
           </>
-        ) : (
+        ) : step === "party" ? (
           <>
             <p
               className="font-subheader"
@@ -346,7 +437,6 @@ export default function RSVPPage() {
               {match?.confidence != null ? `  ·  ${pct(match.confidence)}%` : ""}
             </div>
 
-            {/* ✅ Centered guests + centered checkboxes (mobile-first) */}
             <div
               style={{
                 maxWidth: 520,
@@ -372,7 +462,6 @@ export default function RSVPPage() {
                       width: "100%",
                     }}
                   >
-                    {/* Custom checkbox to match the thin square look */}
                     <input
                       type="checkbox"
                       checked={checked}
@@ -401,15 +490,6 @@ export default function RSVPPage() {
                       {fullName(g)}
                     </span>
 
-                    {/* Add a subtle check indicator (only visible when checked) */}
-                    <span
-                      aria-hidden
-                      style={{
-                        position: "absolute",
-                        opacity: 0,
-                        pointerEvents: "none",
-                      }}
-                    />
                     <style jsx>{`
                       input[type="checkbox"]:checked {
                         border-color: rgba(84, 79, 68, 0.55);
@@ -428,7 +508,137 @@ export default function RSVPPage() {
               })}
             </div>
 
-            {/* ✅ Bottom nav, swapped to match screenshot: left = Not you? go back, right = Continue */}
+            {/* ✅ Polite decline confirmation prompt (appears only if 0 selected + Continue clicked) */}
+            {showDeclinePrompt && (
+              <div
+                style={{
+                  maxWidth: 560,
+                  margin: "26px auto 0",
+                  padding: "18px 16px",
+                  borderTop: `1px solid ${thinRule}`,
+                  borderBottom: `1px solid ${thinRule}`,
+                }}
+              >
+                <p
+                  className="font-subheader"
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    opacity: 0.8,
+                    lineHeight: 1.8,
+                  }}
+                >
+                  It looks like no one is selected.
+                  <br />
+                  Would you like to politely decline the invitation?
+                </p>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 16,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setShowDeclinePrompt(false)}
+                    style={{
+                      background: "transparent",
+                      border: `1px solid ${thinRule}`,
+                      color: ink,
+                      borderRadius: 999,
+                      padding: "10px 18px",
+                      fontFamily: "var(--font-body)",
+                      fontSize: 12,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    No, go back
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={confirmDecline}
+                    style={{
+                      background: ink,
+                      border: `1px solid ${ink}`,
+                      color: "#fbfaf7",
+                      borderRadius: 999,
+                      padding: "10px 18px",
+                      fontFamily: "var(--font-body)",
+                      fontSize: 12,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Yes, decline
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div
+              style={{
+                maxWidth: 720,
+                margin: "34px auto 0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 16,
+                paddingInline: 6,
+              }}
+            >
+              <button type="button" onClick={handleNotYou} style={navBtnBase}>
+                <ArrowLine side="left" />
+                <span>Not you? go back</span>
+              </button>
+
+              <button type="button" onClick={handleContinueFromParty} style={navBtnBase}>
+                <span>Continue</span>
+                <ArrowLine side="right" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
+              <p
+                className="font-subheader"
+                style={{
+                  fontSize: 15,
+                  letterSpacing: "0.20em",
+                  opacity: 0.75,
+                  textTransform: "uppercase",
+                  lineHeight: 1.9,
+                  marginBottom: 28,
+                  paddingInline: 10,
+                }}
+              >
+                {confirmCopy.line1}
+              </p>
+
+              <p
+                className="font-subheader"
+                style={{
+                  fontSize: 15,
+                  letterSpacing: "0.20em",
+                  opacity: 0.75,
+                  textTransform: "uppercase",
+                  lineHeight: 1.9,
+                  marginBottom: 10,
+                  paddingInline: 10,
+                }}
+              >
+                {confirmCopy.line2}
+              </p>
+            </div>
+
             <div
               style={{
                 maxWidth: 720,
@@ -442,22 +652,17 @@ export default function RSVPPage() {
             >
               <button
                 type="button"
-                onClick={handleNotYou}
+                onClick={() => setStep("party")}
                 style={navBtnBase}
               >
                 <ArrowLine side="left" />
-                <span>Not you? go back</span>
+                <span>Not right? go back</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleContinue}
-                disabled={selectedIds.size === 0}
-                style={{
-                  ...navBtnBase,
-                  opacity: selectedIds.size === 0 ? 0.35 : 0.9,
-                  cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
-                }}
+                onClick={handleContinueFromConfirm}
+                style={navBtnBase}
               >
                 <span>Continue</span>
                 <ArrowLine side="right" />
