@@ -2,51 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Container from "react-bootstrap/Container";
-
-const MOCK_PARTIES = [
-  { id: "p1", name: "Luna Party" },
-  { id: "p2", name: "Smith Party" },
-];
-
-const MOCK_GUESTS = [
-  { id: "g1", first_name: "Grant", last_name: "Luna", party_id: "p1" },
-  { id: "g2", first_name: "Raye", last_name: "Robinson", party_id: "p1" },
-  { id: "g3", first_name: "John", last_name: "Smith", party_id: "p2" },
-  { id: "g4", first_name: "Jane", last_name: "Smith", party_id: "p2" },
-];
+import {
+  findPartyMatchByName,
+  submitPartyRSVP,
+} from "../server-actions/rsvpActions";
 
 function fullName(g) {
   return `${g.first_name} ${g.last_name}`.trim();
-}
-
-function similarityScore(input, candidate) {
-  const clean = (s) => s.toLowerCase().replace(/[^a-z\s]/g, "").trim();
-
-  const A = clean(input);
-  const B = clean(candidate);
-  if (!A || !B) return 0;
-  if (A === B) return 1;
-
-  const aTokens = A.split(/\s+/).filter(Boolean);
-  const bTokens = B.split(/\s+/).filter(Boolean);
-
-  const aSet = new Set(aTokens);
-  const bSet = new Set(bTokens);
-
-  let overlap = 0;
-  for (const t of aSet) if (bSet.has(t)) overlap++;
-
-  const tokenScore = overlap / Math.max(aSet.size, bSet.size);
-
-  const prefixLen = Math.min(A.length, B.length);
-  let prefixMatch = 0;
-  for (let i = 0; i < prefixLen; i++) {
-    if (A[i] === B[i]) prefixMatch++;
-    else break;
-  }
-  const prefixScore = prefixMatch / Math.max(A.length, B.length);
-
-  return Math.min(1, tokenScore * 0.7 + prefixScore * 0.3);
 }
 
 function pct(n) {
@@ -62,14 +24,16 @@ function formatNameList(names) {
 }
 
 export default function RSVPPage() {
-  // ✅ added "thanks" step
   const [step, setStep] = useState("search"); // "search" | "party" | "confirm" | "thanks"
   const [query, setQuery] = useState("");
   const [match, setMatch] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
-
-  // ✅ decline confirmation prompt
   const [showDeclinePrompt, setShowDeclinePrompt] = useState(false);
+
+  // ✅ autosave-on-confirm helpers
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const lastSavedSignatureRef = useRef(""); // prevents double-saving the exact same selection
 
   // refs for arrow positioning
   const mirrorRef = useRef(null);
@@ -87,10 +51,8 @@ export default function RSVPPage() {
       const inputWidth = inputRef.current?.offsetWidth ?? 0;
 
       const desiredOffset = textWidth / 2 + ARROW_GAP_PX;
-
       const paddingSide = 16;
       const maxOffset = Math.max(0, inputWidth / 2 - paddingSide - 10);
-
       const offset = Math.min(desiredOffset, maxOffset);
 
       arrowBtnRef.current.style.left = "50%";
@@ -105,35 +67,30 @@ export default function RSVPPage() {
     return () => cancelAnimationFrame(raf);
   }, [query, showArrow, step]);
 
-  const handleSearchSubmit = (e) => {
+  // ✅ DB SEARCH
+  const handleSearchSubmit = async (e) => {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
 
-    let best = null;
-    for (const g of MOCK_GUESTS) {
-      const score = similarityScore(q, fullName(g));
-      if (!best || score > best.score) best = { guest: g, score };
-    }
-    if (!best) return;
+    setSaveError("");
 
-    const party =
-      MOCK_PARTIES.find((p) => p.id === best.guest.party_id) || {
-        id: best.guest.party_id,
-        name: "Your Party",
-      };
+    const res = await findPartyMatchByName(q);
+    if (!res) return;
 
-    const partyGuests = MOCK_GUESTS.filter((g) => g.party_id === party.id);
+    setMatch(res);
 
-    setMatch({
-      party,
-      guests: partyGuests,
-      matchedGuest: best.guest,
-      confidence: best.score,
-    });
+    // ✅ optional: pre-check based on existing rsvp_status
+    const prechecked = new Set(
+      (res.guests || [])
+        .filter((g) => g.rsvp_status === "yes")
+        .map((g) => g.id)
+    );
 
-    setSelectedIds(new Set());
+    setSelectedIds(prechecked);
     setShowDeclinePrompt(false);
+    setIsSaving(false);
+    lastSavedSignatureRef.current = ""; // reset autosave state for this new match
     setStep("party");
   };
 
@@ -142,6 +99,9 @@ export default function RSVPPage() {
     setMatch(null);
     setSelectedIds(new Set());
     setShowDeclinePrompt(false);
+    setSaveError("");
+    setIsSaving(false);
+    lastSavedSignatureRef.current = "";
   };
 
   const toggleSelected = (id) => {
@@ -194,16 +154,16 @@ export default function RSVPPage() {
     };
   }, [selectedNames, partyNames]);
 
-  // ✅ thank-you page copy logic (matches screenshot)
   const thanksCopy = useMemo(() => {
     const isAttending = selectedIds.size > 0;
     return {
       line1: "THANK YOU FOR RSVPING!",
-      line2: isAttending ? "WE CAN’T WAIT TO CELEBRATE WITH YOU!" : "WE WILL MISS YOU",
+      line2: isAttending
+        ? "WE CAN’T WAIT TO CELEBRATE WITH YOU!"
+        : "WE WILL MISS YOU",
     };
   }, [selectedIds]);
 
-  // Wedding typography
   const ink = "#544f44";
   const thinRule = "rgba(84, 79, 68, 0.35)";
 
@@ -227,20 +187,20 @@ export default function RSVPPage() {
   const ArrowLine = ({ side = "left" }) => (
     <span
       aria-hidden
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-      }}
+      style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
     >
       {side === "left" ? (
         <>
           <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
-          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
+          <span
+            style={{ width: 44, height: 1, background: ink, opacity: 0.65 }}
+          />
         </>
       ) : (
         <>
-          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
+          <span
+            style={{ width: 44, height: 1, background: ink, opacity: 0.65 }}
+          />
           <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
         </>
       )}
@@ -248,34 +208,64 @@ export default function RSVPPage() {
   );
 
   const handleContinueFromParty = () => {
+    // ✅ allow decline flow from 0 selected
     if (selectedIds.size === 0) {
       setShowDeclinePrompt(true);
       return;
     }
     setShowDeclinePrompt(false);
-    setStep("confirm");
+    setSaveError("");
+    setStep("confirm"); // ✅ entering confirm triggers autosave below
   };
 
   const confirmDecline = () => {
     setShowDeclinePrompt(false);
-    setStep("confirm");
+    setSaveError("");
+    setStep("confirm"); // ✅ entering confirm triggers autosave below
   };
 
-  // ✅ now "Continue" from confirm navigates to thanks page
+  // ✅ AUTOSAVE: as soon as we ENTER the confirm page
+  useEffect(() => {
+    const run = async () => {
+      if (step !== "confirm") return;
+      if (!match) return;
+
+      // Signature = party + sorted selections
+      const partyId = match.party?.id ?? "";
+      const selected = Array.from(selectedIds).sort();
+      const signature = `${partyId}::${selected.join(",")}`;
+
+      // Prevent re-saving if nothing changed since last time we landed here
+      if (signature && signature === lastSavedSignatureRef.current) return;
+
+      try {
+        setIsSaving(true);
+        setSaveError("");
+
+        const guestIdsInParty = (match.guests || []).map((g) => g.id);
+
+        await submitPartyRSVP({
+          partyId: match.party?.id ?? null,
+          guestIdsInParty,
+          selectedIds: selected, // may be empty => decline
+        });
+
+        lastSavedSignatureRef.current = signature;
+      } catch (err) {
+        setSaveError("Something went wrong saving your RSVP. Please try again.");
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, match, selectedIds]);
+
+  // ✅ confirm page Continue just advances — no saving here anymore
   const handleContinueFromConfirm = () => {
     setStep("thanks");
   };
-
-  // ✅ (optional) you can call your submit here; for now we just log once on thanks entry
-  useEffect(() => {
-    if (step !== "thanks" || !match) return;
-    const selected = match.guests.filter((g) => selectedIds.has(g.id));
-    console.log("RSVP Submitted:", {
-      party: match.party,
-      attending: selected.map(fullName),
-      declined: selected.length === 0,
-    });
-  }, [step, match, selectedIds]);
 
   const bottomNav = (
     <div
@@ -323,9 +313,12 @@ export default function RSVPPage() {
           ...navBtnBase,
           visibility: step === "thanks" ? "hidden" : "visible",
           pointerEvents: step === "thanks" ? "none" : "auto",
+          opacity: step === "confirm" && isSaving ? 0.45 : 0.9,
         }}
       >
-        <span>Continue</span>
+        <span>
+          {step === "confirm" && isSaving ? "Saving…" : "Continue"}
+        </span>
         <ArrowLine side="right" />
       </button>
     </div>
@@ -352,10 +345,7 @@ export default function RSVPPage() {
       <Container style={{ paddingTop: 90, paddingBottom: 80, textAlign: "center" }}>
         <h1
           className="font-header"
-          style={{
-            fontSize: "clamp(56px, 6vw, 72px)",
-            marginBottom: 18,
-          }}
+          style={{ fontSize: "clamp(56px, 6vw, 72px)", marginBottom: 18 }}
         >
           RSVP
         </h1>
@@ -634,43 +624,75 @@ export default function RSVPPage() {
         ) : step === "confirm" ? (
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
-              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 28 }}>
+              <p
+                className="font-subheader"
+                style={{ ...centerCopyStyle, marginBottom: 28 }}
+              >
                 {confirmCopy.line1}
               </p>
 
-              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 10 }}>
+              <p
+                className="font-subheader"
+                style={{ ...centerCopyStyle, marginBottom: 10 }}
+              >
                 {confirmCopy.line2}
               </p>
+
+              {saveError && (
+                <p
+                  className="font-subheader"
+                  style={{
+                    marginTop: 18,
+                    fontSize: 12,
+                    letterSpacing: "0.16em",
+                    opacity: 0.75,
+                    textTransform: "uppercase",
+                    lineHeight: 1.8,
+                    paddingInline: 10,
+                  }}
+                >
+                  {saveError}
+                </p>
+              )}
+
+              {/* optional subtle "Saved" feel without adding much personality */}
+              {!saveError && !isSaving && lastSavedSignatureRef.current && (
+                <p
+                  className="font-subheader"
+                  style={{
+                    marginTop: 18,
+                    fontSize: 12,
+                    letterSpacing: "0.16em",
+                    opacity: 0.55,
+                    textTransform: "uppercase",
+                    lineHeight: 1.8,
+                    paddingInline: 10,
+                  }}
+                >
+                  Saved
+                </p>
+              )}
             </div>
 
             {bottomNav}
           </>
         ) : (
-          // ✅ THANK YOU PAGE (matches screenshot + logic)
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
               <p
                 className="font-subheader"
-                style={{
-                  ...centerCopyStyle,
-                  marginBottom: 18,
-                }}
+                style={{ ...centerCopyStyle, marginBottom: 18 }}
               >
                 {thanksCopy.line1}
               </p>
 
               <p
                 className="font-subheader"
-                style={{
-                  ...centerCopyStyle,
-                  marginBottom: 18,
-                }}
+                style={{ ...centerCopyStyle, marginBottom: 18 }}
               >
                 {thanksCopy.line2}
               </p>
             </div>
-
-            {/* no nav on thank-you page (like screenshot) */}
           </>
         )}
       </Container>
