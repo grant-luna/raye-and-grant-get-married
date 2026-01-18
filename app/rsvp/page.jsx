@@ -67,7 +67,7 @@ export default function RSVPPage() {
   const showArrow = query.trim().length > 0;
   const ARROW_GAP_PX = 18;
 
-  // ✅ Position arrow after centered text, but clamp so it can't drift off input on mobile
+  // Position arrow after centered text, clamped for mobile
   useEffect(() => {
     if (!mirrorRef.current || !arrowBtnRef.current || !inputRef.current) return;
 
@@ -75,11 +75,9 @@ export default function RSVPPage() {
       const textWidth = mirrorRef.current?.offsetWidth ?? 0;
       const inputWidth = inputRef.current?.offsetWidth ?? 0;
 
-      // Desired: end of centered text + gap
       const desiredOffset = textWidth / 2 + ARROW_GAP_PX;
 
-      // Clamp so arrow stays inside the input visual area
-      const paddingSide = 16; // matches input padding horizontal
+      const paddingSide = 16;
       const maxOffset = Math.max(0, inputWidth / 2 - paddingSide - 10);
 
       const offset = Math.min(desiredOffset, maxOffset);
@@ -123,7 +121,8 @@ export default function RSVPPage() {
       confidence: best.score,
     });
 
-    setSelectedIds(new Set(partyGuests.map((g) => g.id)));
+    // ✅ Unchecked by default
+    setSelectedIds(new Set());
     setStep("party");
   };
 
@@ -158,6 +157,50 @@ export default function RSVPPage() {
     return "We found a possible match";
   }, [match]);
 
+  // Shared “wedding site” typography feel
+  const ink = "#544f44";
+  const thinRule = "rgba(84, 79, 68, 0.35)";
+
+  const navBtnBase = {
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: ink,
+    cursor: "pointer",
+    fontSize: 13,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+    fontFamily: "var(--font-body)",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 12,
+    opacity: 0.9,
+    lineHeight: 1.1,
+  };
+
+  const ArrowLine = ({ side = "left" }) => (
+    <span
+      aria-hidden
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      {side === "left" ? (
+        <>
+          <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
+          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
+        </>
+      ) : (
+        <>
+          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
+          <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+        </>
+      )}
+    </span>
+  );
+
   return (
     <main
       style={{
@@ -168,7 +211,13 @@ export default function RSVPPage() {
       }}
     >
       <Container style={{ paddingTop: 90, paddingBottom: 80, textAlign: "center" }}>
-        <h1 className="font-header" style={{ fontSize: "clamp(56px, 6vw, 72px)", marginBottom: 18 }}>
+        <h1
+          className="font-header"
+          style={{
+            fontSize: "clamp(56px, 6vw, 72px)",
+            marginBottom: 18,
+          }}
+        >
           RSVP
         </h1>
 
@@ -176,7 +225,13 @@ export default function RSVPPage() {
           <>
             <p
               className="font-subheader"
-              style={{ fontSize: 14, letterSpacing: "0.18em", opacity: 0.85, marginBottom: 36 }}
+              style={{
+                fontSize: 14,
+                letterSpacing: "0.18em",
+                opacity: 0.85,
+                marginBottom: 36,
+                textTransform: "uppercase",
+              }}
             >
               Please enter your full name
             </p>
@@ -213,18 +268,17 @@ export default function RSVPPage() {
                 style={{
                   background: "transparent",
                   border: "none",
-                  borderBottom: "1px solid rgba(84, 79, 68, 0.35)",
+                  borderBottom: `1px solid ${thinRule}`,
                   borderRadius: 0,
                   textAlign: "center",
                   padding: "14px 16px",
                   fontFamily: "var(--font-body)",
                   fontSize: 18,
-                  color: "#544f44",
+                  color: ink,
                   boxShadow: "none",
                 }}
               />
 
-              {/* ✅ Only the button is positioned — no overlay blocking typing */}
               <button
                 ref={arrowBtnRef}
                 type="submit"
@@ -237,7 +291,7 @@ export default function RSVPPage() {
                   background: "none",
                   border: "none",
                   fontSize: 22,
-                  color: "#544f44",
+                  color: ink,
                   cursor: "pointer",
                   lineHeight: 1,
                   padding: 0,
@@ -249,20 +303,60 @@ export default function RSVPPage() {
           </>
         ) : (
           <>
-            <p className="font-subheader" style={{ fontSize: 14, letterSpacing: "0.18em", opacity: 0.85, marginBottom: 10 }}>
+            <p
+              className="font-subheader"
+              style={{
+                fontSize: 14,
+                letterSpacing: "0.18em",
+                opacity: 0.85,
+                marginBottom: 10,
+                textTransform: "uppercase",
+              }}
+            >
               {confidenceText}
             </p>
 
-            <p className="font-subheader" style={{ fontSize: 14, letterSpacing: "0.18em", opacity: 0.85, marginBottom: 26 }}>
-              Select the members of your party that will be attending
+            <p
+              className="font-subheader"
+              style={{
+                fontSize: 14,
+                letterSpacing: "0.18em",
+                opacity: 0.85,
+                marginBottom: 26,
+                textTransform: "uppercase",
+                lineHeight: 1.8,
+              }}
+            >
+              Please select the people in your party
+              <br />
+              who will be attending
             </p>
 
-            <div className="font-subheader" style={{ fontSize: 14, letterSpacing: "0.16em", opacity: 0.65, marginBottom: 22 }}>
+            <div
+              className="font-subheader"
+              style={{
+                fontSize: 13,
+                letterSpacing: "0.16em",
+                opacity: 0.65,
+                marginBottom: 22,
+                textTransform: "uppercase",
+              }}
+            >
               {match?.party?.name}
               {match?.confidence != null ? `  ·  ${pct(match.confidence)}%` : ""}
             </div>
 
-            <div style={{ maxWidth: 520, margin: "0 auto", textAlign: "left" }}>
+            {/* ✅ Centered guests + centered checkboxes (mobile-first) */}
+            <div
+              style={{
+                maxWidth: 520,
+                margin: "0 auto",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 14,
+              }}
+            >
               {match?.guests?.map((g) => {
                 const checked = selectedIds.has(g.id);
                 return (
@@ -271,63 +365,102 @@ export default function RSVPPage() {
                     style={{
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "center",
                       gap: 18,
-                      padding: "10px 6px",
                       cursor: "pointer",
                       userSelect: "none",
+                      width: "100%",
                     }}
                   >
+                    {/* Custom checkbox to match the thin square look */}
                     <input
                       type="checkbox"
                       checked={checked}
                       onChange={() => toggleSelected(g.id)}
                       style={{
-                        width: 26,
-                        height: 26,
-                        accentColor: "#544f44",
+                        width: 22,
+                        height: 22,
+                        appearance: "none",
+                        WebkitAppearance: "none",
+                        border: `1px solid ${thinRule}`,
+                        background: "transparent",
+                        display: "grid",
+                        placeItems: "center",
                         cursor: "pointer",
-                        flex: "0 0 auto",
                       }}
                     />
-                    <span className="font-subheader" style={{ fontSize: 22, letterSpacing: "0.08em", textTransform: "uppercase", color: "#544f44" }}>
+                    <span
+                      className="font-subheader"
+                      style={{
+                        fontSize: 18,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        color: ink,
+                      }}
+                    >
                       {fullName(g)}
                     </span>
+
+                    {/* Add a subtle check indicator (only visible when checked) */}
+                    <span
+                      aria-hidden
+                      style={{
+                        position: "absolute",
+                        opacity: 0,
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <style jsx>{`
+                      input[type="checkbox"]:checked {
+                        border-color: rgba(84, 79, 68, 0.55);
+                      }
+                      input[type="checkbox"]:checked::after {
+                        content: "";
+                        width: 10px;
+                        height: 10px;
+                        background: ${ink};
+                        opacity: 0.7;
+                        display: block;
+                      }
+                    `}</style>
                   </label>
                 );
               })}
             </div>
 
-            <div style={{ marginTop: 26, display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+            {/* ✅ Bottom nav, swapped to match screenshot: left = Not you? go back, right = Continue */}
+            <div
+              style={{
+                maxWidth: 720,
+                margin: "34px auto 0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 16,
+                paddingInline: 6,
+              }}
+            >
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={handleContinue}
-                disabled={selectedIds.size === 0}
-                style={{
-                  borderRadius: 999,
-                  padding: "10px 26px",
-                  backgroundColor: "#544f44",
-                  borderColor: "#544f44",
-                  opacity: selectedIds.size === 0 ? 0.5 : 1,
-                  cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
-                }}
+                onClick={handleNotYou}
+                style={navBtnBase}
               >
-                Continue
+                <ArrowLine side="left" />
+                <span>Not you? go back</span>
               </button>
 
               <button
                 type="button"
-                className="btn"
-                onClick={handleNotYou}
+                onClick={handleContinue}
+                disabled={selectedIds.size === 0}
                 style={{
-                  borderRadius: 999,
-                  padding: "10px 18px",
-                  background: "transparent",
-                  border: "1px solid rgba(84, 79, 68, 0.35)",
-                  color: "#544f44",
+                  ...navBtnBase,
+                  opacity: selectedIds.size === 0 ? 0.35 : 0.9,
+                  cursor: selectedIds.size === 0 ? "not-allowed" : "pointer",
                 }}
               >
-                Not you?
+                <span>Continue</span>
+                <ArrowLine side="right" />
               </button>
             </div>
           </>
