@@ -62,7 +62,8 @@ function formatNameList(names) {
 }
 
 export default function RSVPPage() {
-  const [step, setStep] = useState("search"); // "search" | "party" | "confirm"
+  // ✅ added "thanks" step
+  const [step, setStep] = useState("search"); // "search" | "party" | "confirm" | "thanks"
   const [query, setQuery] = useState("");
   const [match, setMatch] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
@@ -182,14 +183,25 @@ export default function RSVPPage() {
       return {
         line1: formatNameList(partyNames).toUpperCase(),
         line2: "REGRETFULLY DECLINE",
+        isAttending: false,
       };
     }
 
     return {
       line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE`,
       line2: "CELEBRATING WITH US!",
+      isAttending: true,
     };
   }, [selectedNames, partyNames]);
+
+  // ✅ thank-you page copy logic (matches screenshot)
+  const thanksCopy = useMemo(() => {
+    const isAttending = selectedIds.size > 0;
+    return {
+      line1: "THANK YOU FOR RSVPING!",
+      line2: isAttending ? "WE CAN’T WAIT TO CELEBRATE WITH YOU!" : "WE WILL MISS YOU",
+    };
+  }, [selectedIds]);
 
   // Wedding typography
   const ink = "#544f44";
@@ -236,7 +248,6 @@ export default function RSVPPage() {
   );
 
   const handleContinueFromParty = () => {
-    // ✅ If nobody selected, ask for confirmation before declining
     if (selectedIds.size === 0) {
       setShowDeclinePrompt(true);
       return;
@@ -250,12 +261,21 @@ export default function RSVPPage() {
     setStep("confirm");
   };
 
+  // ✅ now "Continue" from confirm navigates to thanks page
   const handleContinueFromConfirm = () => {
-    if (!match) return;
-    const selected = match.guests.filter((g) => selectedIds.has(g.id));
-    console.log("Party:", match.party);
-    console.log("Selected guests:", selected);
+    setStep("thanks");
   };
+
+  // ✅ (optional) you can call your submit here; for now we just log once on thanks entry
+  useEffect(() => {
+    if (step !== "thanks" || !match) return;
+    const selected = match.guests.filter((g) => selectedIds.has(g.id));
+    console.log("RSVP Submitted:", {
+      party: match.party,
+      attending: selected.map(fullName),
+      declined: selected.length === 0,
+    });
+  }, [step, match, selectedIds]);
 
   const bottomNav = (
     <div
@@ -273,25 +293,52 @@ export default function RSVPPage() {
         type="button"
         onClick={() => {
           setShowDeclinePrompt(false);
+
           if (step === "confirm") setStep("party");
+          else if (step === "thanks") setStep("confirm");
           else handleNotYou();
         }}
         style={navBtnBase}
       >
         <ArrowLine side="left" />
-        <span>{step === "confirm" ? "Not right? go back" : "Not you? go back"}</span>
+        <span>
+          {step === "confirm"
+            ? "Not right? go back"
+            : step === "thanks"
+            ? "Go back"
+            : "Not you? go back"}
+        </span>
       </button>
 
       <button
         type="button"
-        onClick={step === "confirm" ? handleContinueFromConfirm : handleContinueFromParty}
-        style={navBtnBase}
+        onClick={
+          step === "confirm"
+            ? handleContinueFromConfirm
+            : step === "party"
+            ? handleContinueFromParty
+            : () => {}
+        }
+        style={{
+          ...navBtnBase,
+          visibility: step === "thanks" ? "hidden" : "visible",
+          pointerEvents: step === "thanks" ? "none" : "auto",
+        }}
       >
         <span>Continue</span>
         <ArrowLine side="right" />
       </button>
     </div>
   );
+
+  const centerCopyStyle = {
+    fontSize: 15,
+    letterSpacing: "0.20em",
+    opacity: 0.75,
+    textTransform: "uppercase",
+    lineHeight: 1.9,
+    paddingInline: 10,
+  };
 
   return (
     <main
@@ -508,7 +555,6 @@ export default function RSVPPage() {
               })}
             </div>
 
-            {/* ✅ Polite decline confirmation prompt (appears only if 0 selected + Continue clicked) */}
             {showDeclinePrompt && (
               <div
                 style={{
@@ -583,91 +629,48 @@ export default function RSVPPage() {
               </div>
             )}
 
-            <div
-              style={{
-                maxWidth: 720,
-                margin: "34px auto 0",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 16,
-                paddingInline: 6,
-              }}
-            >
-              <button type="button" onClick={handleNotYou} style={navBtnBase}>
-                <ArrowLine side="left" />
-                <span>Not you? go back</span>
-              </button>
+            {bottomNav}
+          </>
+        ) : step === "confirm" ? (
+          <>
+            <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
+              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 28 }}>
+                {confirmCopy.line1}
+              </p>
 
-              <button type="button" onClick={handleContinueFromParty} style={navBtnBase}>
-                <span>Continue</span>
-                <ArrowLine side="right" />
-              </button>
+              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 10 }}>
+                {confirmCopy.line2}
+              </p>
             </div>
+
+            {bottomNav}
           </>
         ) : (
+          // ✅ THANK YOU PAGE (matches screenshot + logic)
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
               <p
                 className="font-subheader"
                 style={{
-                  fontSize: 15,
-                  letterSpacing: "0.20em",
-                  opacity: 0.75,
-                  textTransform: "uppercase",
-                  lineHeight: 1.9,
-                  marginBottom: 28,
-                  paddingInline: 10,
+                  ...centerCopyStyle,
+                  marginBottom: 18,
                 }}
               >
-                {confirmCopy.line1}
+                {thanksCopy.line1}
               </p>
 
               <p
                 className="font-subheader"
                 style={{
-                  fontSize: 15,
-                  letterSpacing: "0.20em",
-                  opacity: 0.75,
-                  textTransform: "uppercase",
-                  lineHeight: 1.9,
-                  marginBottom: 10,
-                  paddingInline: 10,
+                  ...centerCopyStyle,
+                  marginBottom: 18,
                 }}
               >
-                {confirmCopy.line2}
+                {thanksCopy.line2}
               </p>
             </div>
 
-            <div
-              style={{
-                maxWidth: 720,
-                margin: "34px auto 0",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 16,
-                paddingInline: 6,
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setStep("party")}
-                style={navBtnBase}
-              >
-                <ArrowLine side="left" />
-                <span>Not right? go back</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleContinueFromConfirm}
-                style={navBtnBase}
-              >
-                <span>Continue</span>
-                <ArrowLine side="right" />
-              </button>
-            </div>
+            {/* no nav on thank-you page (like screenshot) */}
           </>
         )}
       </Container>
