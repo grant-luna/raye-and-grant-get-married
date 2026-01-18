@@ -1,4 +1,4 @@
-import SiteNavbar from "@/app/components/SiteNavbar";
+import SiteNavbar from "./components/SiteNavbar.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -54,3 +54,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+// PJKL-QRWJ
