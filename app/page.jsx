@@ -98,22 +98,7 @@ export default function Page() {
               >
                 Grant &amp; Raye
               </span>
-            </div>
-
-            <div style={{ marginTop: 14 }}>
-              <a
-                href="/rsvp"
-                className="btn btn-primary"
-                style={{
-                  borderRadius: 999,
-                  padding: "10px 26px",
-                  backgroundColor: "#544f44",
-                  borderColor: "#544f44",
-                }}
-              >
-                RSVP
-              </a>
-            </div>
+            </div>            
           </div>
         </div>
       </Container>
