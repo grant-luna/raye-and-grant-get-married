@@ -458,21 +458,7 @@ export default function RSVPPage() {
               Please select the people in your party
               <br />
               who will be attending
-            </p>
-
-            <div
-              className="font-subheader"
-              style={{
-                fontSize: 13,
-                letterSpacing: "0.16em",
-                opacity: 0.65,
-                marginBottom: 22,
-                textTransform: "uppercase",
-              }}
-            >
-              {match?.party?.name}
-              {match?.confidence != null ? `  ·  ${pct(match.confidence)}%` : ""}
-            </div>
+            </p>            
 
             <div
               style={{
