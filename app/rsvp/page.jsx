@@ -160,8 +160,7 @@ export default function RSVPPage() {
     // Attending
     const verb = selectedCount === 1 ? "IS" : "WILL BE";
     return {
-      line1: `${formatNameList(selectedNames).toUpperCase()} ${verb}`,
-      line2: "CELEBRATING WITH US!",
+      line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE JOINING US`,      
       isAttending: true,
     };
   }, [selectedNames, partyNames]);
