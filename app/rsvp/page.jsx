@@ -151,8 +151,7 @@ export default function RSVPPage() {
     // Decline
     if (selectedCount === 0) {
       return {
-        line1: formatNameList(partyNames).toUpperCase(),
-        line2: partyCount === 1 ? "REGRETFULLY DECLINES" : "REGRETFULLY DECLINE",
+        line1: `${formatNameList(partyNames).toUpperCase()} REGRETFULLY DECLINE${partyCount === 1 ? "S" : ""}`,        
         isAttending: false,
       };
     }
