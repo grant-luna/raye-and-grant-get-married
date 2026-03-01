@@ -75,7 +75,7 @@ export default function Page() {
               </p>
             </div>
 
-            <p style={{ marginTop: 10, marginBottom: 6, fontSize: 16 }}>
+            <p style={{ marginTop: 10, marginBottom: 25, fontSize: 16 }}>
               We can’t wait to see you!
             </p>
 
@@ -85,7 +85,7 @@ export default function Page() {
                 alignItems: "baseline",
                 justifyContent: "center",
                 gap: 10,
-                marginTop: 6,
+                marginTop: 6,                
               }}
             >
               <span style={{ fontSize: 18, opacity: 0.7 }}>—</span>
@@ -96,7 +96,7 @@ export default function Page() {
                   lineHeight: 1,
                 }}
               >
-                Grant &amp; Raye
+                Raye &amp; Grant
               </span>
             </div>            
           </div>
