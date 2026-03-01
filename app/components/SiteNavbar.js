@@ -18,7 +18,7 @@ export default function SiteNavbar() {
     >
       <Container>
         <Navbar.Toggle
-          aria-controls="wedding-navbar"          
+          aria-controls="wedding-navbar"
           style={{
             border: "none",
             boxShadow: "none",
@@ -28,19 +28,19 @@ export default function SiteNavbar() {
 
         <Navbar.Collapse id="wedding-navbar">
           <Nav className="mx-auto wedding-nav">
-            <Nav.Link as={Link} href="/" style={linkStyle}>
+            <Nav.Link as={Link} href="/" className="wedding-link">
               Home
             </Nav.Link>
-            <Nav.Link as={Link} href="/rsvp" style={linkStyle}>
+            <Nav.Link as={Link} href="/rsvp" className="wedding-link">
               RSVP
             </Nav.Link>
-            <Nav.Link as={Link} href="/travel" style={linkStyle}>
+            <Nav.Link as={Link} href="/travel" className="wedding-link">
               Travel
             </Nav.Link>
-            <Nav.Link as={Link} href="/schedule" style={linkStyle}>
+            <Nav.Link as={Link} href="/schedule" className="wedding-link">
               Schedule
             </Nav.Link>
-            <Nav.Link as={Link} href="/faqs" style={linkStyle}>
+            <Nav.Link as={Link} href="/faqs" className="wedding-link">
               FAQs
             </Nav.Link>
           </Nav>
@@ -49,13 +49,3 @@ export default function SiteNavbar() {
     </Navbar>
   );
 }
-
-const linkStyle = {
-  fontFamily: "var(--font-subheader)",
-  fontWeight: 600,
-  letterSpacing: "0.08em",
-  textTransform: "uppercase",
-  fontSize: 13,
-  color: "#544f44",
-  textDecoration: "none",
-};
