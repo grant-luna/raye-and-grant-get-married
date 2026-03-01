@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Container from "react-bootstrap/Container";
+import Link from "next/link";
 
 export default function Page() {
   return (
@@ -65,10 +66,14 @@ export default function Page() {
               We&apos;re so glad you&apos;re here!
             </p>
 
-            <div style={{ maxWidth: 700, margin: "0 auto" }}>
+            <Link href="/rsvp" className="rsvp-button">
+              Submit Your RSVP
+            </Link>
+
+            <div style={{ maxWidth: 700, margin: "0 auto", marginTop: "14px", }}>
               <p style={{ fontSize: 16, marginBottom: 10 }}>
                 This site has everything you’ll need for the weekend, including event details,
-                travel information, and RSVP.
+                travel information, and RSVP's.
               </p>
               <p style={{ fontSize: 16, marginBottom: 12 }}>
                 Please check back as we get closer to the date.

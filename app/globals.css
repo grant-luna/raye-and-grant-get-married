@@ -126,3 +126,26 @@ h6 {
     opacity: 0.85;
   }
 }
+
+.rsvp-button {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 26px;
+  border: 1.5px solid #544f44;
+  color: #544f44;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font-subheader);
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.25s ease;
+  width: 200px;
+  margin: 10 auto;
+}
+
+/* Elegant hover */
+.rsvp-button:hover {
+  background-color: #544f44;
+  color: #fbfaf7;
+}
