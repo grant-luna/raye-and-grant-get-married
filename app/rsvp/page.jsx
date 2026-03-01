@@ -371,7 +371,7 @@ export default function RSVPPage() {
           style={{
             fontSize: "clamp(56px, 6vw, 72px)",
             marginBottom: 18,
-            letterSpacing: "0.12em", // ✅ more space between R S V P
+            letterSpacing: ".3em", // ✅ more space between R S V P
           }}
         >
           RSVP
