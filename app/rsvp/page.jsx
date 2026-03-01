@@ -199,13 +199,11 @@ export default function RSVPPage() {
     <span aria-hidden style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
       {side === "left" ? (
         <>
-          <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
-          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
+          <span style={{ fontSize: 22, color: ink, lineHeight: 1 }}>←</span>          
         </>
       ) : (
-        <>
-          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
-          <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
+        <>          
+          <span style={{ fontSize: 22, color: ink, lineHeight: 1 }}>→</span>
         </>
       )}
     </span>
