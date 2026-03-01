@@ -1,3 +1,3 @@
-export default function traveling() {
+export default function travel() {
     return <></>
 }

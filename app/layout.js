@@ -2,6 +2,7 @@ import SiteNavbar from "./components/SiteNavbar.js";
 import "bootstrap/dist/css/bootstrap.min.css";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Analytics } from '@vercel/analytics/next';
 
 /* BODY — Cormorant Garamond */
 const bodyFont = localFont({
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
       <body>
         <SiteNavbar />
         {children}
+        <Analytics />
       </body>
     </html>
   );
