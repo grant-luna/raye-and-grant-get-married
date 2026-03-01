@@ -17,9 +17,8 @@ export default function SiteNavbar() {
       }}
     >
       <Container>
-        {/* Mobile hamburger */}
         <Navbar.Toggle
-          aria-controls="wedding-navbar"
+          aria-controls="wedding-navbar"          
           style={{
             border: "none",
             boxShadow: "none",
@@ -28,19 +27,15 @@ export default function SiteNavbar() {
         />
 
         <Navbar.Collapse id="wedding-navbar">
-          <Nav
-            className="mx-auto"   // ✅ CENTERED
-            style={{
-              columnGap: 150,   // ✅ horizontal spacing only
-              rowGap: 0,       // ✅ no vertical spacing
-              alignItems: "center",
-            }}
-          >
+          <Nav className="mx-auto wedding-nav">
+            <Nav.Link as={Link} href="/" style={linkStyle}>
+              Home
+            </Nav.Link>
             <Nav.Link as={Link} href="/rsvp" style={linkStyle}>
               RSVP
             </Nav.Link>
             <Nav.Link as={Link} href="/travel" style={linkStyle}>
-              Traveling
+              Travel
             </Nav.Link>
             <Nav.Link as={Link} href="/schedule" style={linkStyle}>
               Schedule
