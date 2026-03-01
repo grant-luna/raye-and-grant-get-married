@@ -55,7 +55,7 @@ export default function Page() {
               className="font-header font-header--hero"
               style={{                
                 lineHeight: 1.05,
-                marginBottom: 12, // ⬅️ tighter
+                marginBottom: 35, // ⬅️ tighter
               }}
             >
               Welcome to our Wedding Website!
