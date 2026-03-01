@@ -11,10 +11,6 @@ function fullName(g) {
   return `${g.first_name} ${g.last_name}`.trim();
 }
 
-function pct(n) {
-  return Math.round(n * 100);
-}
-
 function formatNameList(names) {
   const list = (names || []).filter(Boolean);
   if (list.length === 0) return "";
@@ -24,16 +20,19 @@ function formatNameList(names) {
 }
 
 export default function RSVPPage() {
-  const [step, setStep] = useState("search"); // "search" | "party" | "confirm" | "thanks"
+  const [step, setStep] = useState("search"); // "search" | "party" | "dietary" | "confirm" | "thanks"
   const [query, setQuery] = useState("");
   const [match, setMatch] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showDeclinePrompt, setShowDeclinePrompt] = useState(false);
 
-  // ✅ autosave-on-confirm helpers
+  // Dietary restrictions per guest id
+  const [dietaryByGuestId, setDietaryByGuestId] = useState({});
+
+  // autosave-on-confirm helpers
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const lastSavedSignatureRef = useRef(""); // prevents double-saving the exact same selection
+  const lastSavedSignatureRef = useRef("");
 
   // refs for arrow positioning
   const mirrorRef = useRef(null);
@@ -67,7 +66,7 @@ export default function RSVPPage() {
     return () => cancelAnimationFrame(raf);
   }, [query, showArrow, step]);
 
-  // ✅ DB SEARCH
+  // DB SEARCH
   const handleSearchSubmit = async (e) => {
     e.preventDefault();
     const q = query.trim();
@@ -80,7 +79,7 @@ export default function RSVPPage() {
 
     setMatch(res);
 
-    // ✅ optional: pre-check based on existing rsvp_status
+    // pre-check based on existing rsvp_status
     const prechecked = new Set(
       (res.guests || [])
         .filter((g) => g.rsvp_status === "yes")
@@ -88,9 +87,17 @@ export default function RSVPPage() {
     );
 
     setSelectedIds(prechecked);
+
+    // preload dietary restrictions from DB
+    const nextDietary = {};
+    (res.guests || []).forEach((g) => {
+      nextDietary[g.id] = g.dietary_restrictions || "";
+    });
+    setDietaryByGuestId(nextDietary);
+
     setShowDeclinePrompt(false);
     setIsSaving(false);
-    lastSavedSignatureRef.current = ""; // reset autosave state for this new match
+    lastSavedSignatureRef.current = "";
     setStep("party");
   };
 
@@ -98,6 +105,7 @@ export default function RSVPPage() {
     setStep("search");
     setMatch(null);
     setSelectedIds(new Set());
+    setDietaryByGuestId({});
     setShowDeclinePrompt(false);
     setSaveError("");
     setIsSaving(false);
@@ -137,18 +145,22 @@ export default function RSVPPage() {
   }, [match]);
 
   const confirmCopy = useMemo(() => {
-    const count = selectedNames.length;
+    const selectedCount = selectedNames.length;
+    const partyCount = partyNames.length;
 
-    if (count === 0) {
+    // Decline
+    if (selectedCount === 0) {
       return {
         line1: formatNameList(partyNames).toUpperCase(),
-        line2: "REGRETFULLY DECLINE",
+        line2: partyCount === 1 ? "REGRETFULLY DECLINES" : "REGRETFULLY DECLINE",
         isAttending: false,
       };
     }
 
+    // Attending
+    const verb = selectedCount === 1 ? "IS" : "WILL BE";
     return {
-      line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE`,
+      line1: `${formatNameList(selectedNames).toUpperCase()} ${verb}`,
       line2: "CELEBRATING WITH US!",
       isAttending: true,
     };
@@ -185,22 +197,15 @@ export default function RSVPPage() {
   };
 
   const ArrowLine = ({ side = "left" }) => (
-    <span
-      aria-hidden
-      style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-    >
+    <span aria-hidden style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
       {side === "left" ? (
         <>
           <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
-          <span
-            style={{ width: 44, height: 1, background: ink, opacity: 0.65 }}
-          />
+          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
         </>
       ) : (
         <>
-          <span
-            style={{ width: 44, height: 1, background: ink, opacity: 0.65 }}
-          />
+          <span style={{ width: 44, height: 1, background: ink, opacity: 0.65 }} />
           <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
         </>
       )}
@@ -208,34 +213,43 @@ export default function RSVPPage() {
   );
 
   const handleContinueFromParty = () => {
-    // ✅ allow decline flow from 0 selected
+    // decline flow from 0 selected
     if (selectedIds.size === 0) {
       setShowDeclinePrompt(true);
       return;
     }
     setShowDeclinePrompt(false);
     setSaveError("");
-    setStep("confirm"); // ✅ entering confirm triggers autosave below
+    setStep("dietary"); // ✅ new step
   };
 
   const confirmDecline = () => {
     setShowDeclinePrompt(false);
     setSaveError("");
-    setStep("confirm"); // ✅ entering confirm triggers autosave below
+    setStep("confirm"); // entering confirm triggers autosave
   };
 
-  // ✅ AUTOSAVE: as soon as we ENTER the confirm page
+  const handleContinueFromDietary = () => {
+    setSaveError("");
+    setStep("confirm"); // entering confirm triggers autosave
+  };
+
+  // AUTOSAVE: as soon as we ENTER the confirm page
   useEffect(() => {
     const run = async () => {
       if (step !== "confirm") return;
       if (!match) return;
 
-      // Signature = party + sorted selections
       const partyId = match.party?.id ?? "";
       const selected = Array.from(selectedIds).sort();
-      const signature = `${partyId}::${selected.join(",")}`;
 
-      // Prevent re-saving if nothing changed since last time we landed here
+      // include dietary in signature so changes re-save
+      const dietarySignature = selected
+        .map((id) => `${id}:${(dietaryByGuestId[id] || "").trim()}`)
+        .join("|");
+
+      const signature = `${partyId}::${selected.join(",")}::${dietarySignature}`;
+
       if (signature && signature === lastSavedSignatureRef.current) return;
 
       try {
@@ -244,10 +258,17 @@ export default function RSVPPage() {
 
         const guestIdsInParty = (match.guests || []).map((g) => g.id);
 
+        // only send dietary for selected guests
+        const dietarySelected = {};
+        selected.forEach((id) => {
+          dietarySelected[id] = dietaryByGuestId[id] || "";
+        });
+
         await submitPartyRSVP({
           partyId: match.party?.id ?? null,
           guestIdsInParty,
           selectedIds: selected, // may be empty => decline
+          dietaryByGuestId: dietarySelected, // ✅ new payload
         });
 
         lastSavedSignatureRef.current = signature;
@@ -260,9 +281,8 @@ export default function RSVPPage() {
 
     run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, match, selectedIds]);
+  }, [step, match, selectedIds, dietaryByGuestId]);
 
-  // ✅ confirm page Continue just advances — no saving here anymore
   const handleContinueFromConfirm = () => {
     setStep("thanks");
   };
@@ -284,7 +304,8 @@ export default function RSVPPage() {
         onClick={() => {
           setShowDeclinePrompt(false);
 
-          if (step === "confirm") setStep("party");
+          if (step === "confirm") setStep(selectedIds.size > 0 ? "dietary" : "party");
+          else if (step === "dietary") setStep("party");
           else if (step === "thanks") setStep("confirm");
           else handleNotYou();
         }}
@@ -294,6 +315,8 @@ export default function RSVPPage() {
         <span>
           {step === "confirm"
             ? "Not right? go back"
+            : step === "dietary"
+            ? "Go back"
             : step === "thanks"
             ? "Go back"
             : "Not you? go back"}
@@ -305,6 +328,8 @@ export default function RSVPPage() {
         onClick={
           step === "confirm"
             ? handleContinueFromConfirm
+            : step === "dietary"
+            ? handleContinueFromDietary
             : step === "party"
             ? handleContinueFromParty
             : () => {}
@@ -316,9 +341,7 @@ export default function RSVPPage() {
           opacity: step === "confirm" && isSaving ? 0.45 : 0.9,
         }}
       >
-        <span>
-          {step === "confirm" && isSaving ? "Saving…" : "Continue"}
-        </span>
+        <span>{step === "confirm" && isSaving ? "Saving…" : "Continue"}</span>
         <ArrowLine side="right" />
       </button>
     </div>
@@ -345,7 +368,11 @@ export default function RSVPPage() {
       <Container style={{ paddingTop: 90, paddingBottom: 80, textAlign: "center" }}>
         <h1
           className="font-header"
-          style={{ fontSize: "clamp(56px, 6vw, 72px)", marginBottom: 18 }}
+          style={{
+            fontSize: "clamp(56px, 6vw, 72px)",
+            marginBottom: 18,
+            letterSpacing: "0.12em", // ✅ more space between R S V P
+          }}
         >
           RSVP
         </h1>
@@ -413,8 +440,8 @@ export default function RSVPPage() {
                 aria-label="Search"
                 style={{
                   position: "absolute",
-                  opacity: showArrow ? 1 : 0,
-                  pointerEvents: showArrow ? "auto" : "none",
+                  opacity: query.trim().length > 0 ? 1 : 0,
+                  pointerEvents: query.trim().length > 0 ? "auto" : "none",
                   transition: "opacity 0.25s ease, transform 0.25s ease",
                   background: "none",
                   border: "none",
@@ -458,7 +485,7 @@ export default function RSVPPage() {
               Please select the people in your party
               <br />
               who will be attending
-            </p>            
+            </p>
 
             <div
               style={{
@@ -607,20 +634,84 @@ export default function RSVPPage() {
 
             {bottomNav}
           </>
+        ) : step === "dietary" ? (
+          <>
+            <p
+              className="font-subheader"
+              style={{
+                fontSize: 14,
+                letterSpacing: "0.18em",
+                opacity: 0.85,
+                marginBottom: 26,
+                textTransform: "uppercase",
+                lineHeight: 1.8,
+              }}
+            >
+              Please let us know about any
+              <br />
+              dietary restrictions or accommodations
+            </p>
+
+            <div style={{ maxWidth: 620, margin: "0 auto" }}>
+              {selectedGuests.map((g) => (
+                <div
+                  key={g.id}
+                  style={{
+                    textAlign: "left",
+                    marginBottom: 18,
+                    paddingBottom: 18,
+                    borderBottom: `1px solid ${thinRule}`,
+                  }}
+                >
+                  <div
+                    className="font-subheader"
+                    style={{
+                      fontSize: 13,
+                      letterSpacing: "0.16em",
+                      opacity: 0.85,
+                      marginBottom: 10,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {fullName(g)}
+                  </div>
+
+                  <textarea
+                    value={dietaryByGuestId[g.id] || ""}
+                    onChange={(e) =>
+                      setDietaryByGuestId((prev) => ({
+                        ...prev,
+                        [g.id]: e.target.value,
+                      }))
+                    }
+                    rows={2}
+                    placeholder="Optional (example: vegetarian, gluten-free, allergies, mobility accommodations, etc.)"
+                    className="form-control"
+                    style={{
+                      background: "transparent",
+                      border: `1px solid ${thinRule}`,
+                      borderRadius: 0,
+                      fontFamily: "var(--font-body)",
+                      fontSize: 16,
+                      color: ink,
+                      boxShadow: "none",
+                      padding: "12px 14px",
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {bottomNav}
+          </>
         ) : step === "confirm" ? (
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
-              <p
-                className="font-subheader"
-                style={{ ...centerCopyStyle, marginBottom: 28 }}
-              >
+              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 28 }}>
                 {confirmCopy.line1}
               </p>
 
-              <p
-                className="font-subheader"
-                style={{ ...centerCopyStyle, marginBottom: 10 }}
-              >
+              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 10 }}>
                 {confirmCopy.line2}
               </p>
 
@@ -640,24 +731,6 @@ export default function RSVPPage() {
                   {saveError}
                 </p>
               )}
-
-              {/* optional subtle "Saved" feel without adding much personality */}
-              {!saveError && !isSaving && lastSavedSignatureRef.current && (
-                <p
-                  className="font-subheader"
-                  style={{
-                    marginTop: 18,
-                    fontSize: 12,
-                    letterSpacing: "0.16em",
-                    opacity: 0.55,
-                    textTransform: "uppercase",
-                    lineHeight: 1.8,
-                    paddingInline: 10,
-                  }}
-                >
-                  Saved
-                </p>
-              )}
             </div>
 
             {bottomNav}
@@ -665,17 +738,11 @@ export default function RSVPPage() {
         ) : (
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
-              <p
-                className="font-subheader"
-                style={{ ...centerCopyStyle, marginBottom: 18 }}
-              >
+              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 18 }}>
                 {thanksCopy.line1}
               </p>
 
-              <p
-                className="font-subheader"
-                style={{ ...centerCopyStyle, marginBottom: 18 }}
-              >
+              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 18 }}>
                 {thanksCopy.line2}
               </p>
             </div>

@@ -94,9 +94,19 @@ export async function findPartyMatchByName(input) {
   };
 }
 
-export async function submitPartyRSVP({ partyId, guestIdsInParty, selectedIds }) {
+export async function submitPartyRSVP({
+  partyId,
+  guestIdsInParty,
+  selectedIds,
+  dietaryByGuestId, // ✅ NEW
+}) {
   const idsInParty = Array.isArray(guestIdsInParty) ? guestIdsInParty : [];
   const selected = Array.isArray(selectedIds) ? selectedIds : [];
+
+  const dietary =
+    dietaryByGuestId && typeof dietaryByGuestId === "object"
+      ? dietaryByGuestId
+      : {};
 
   if (!idsInParty.length) return { ok: false };
 
@@ -117,6 +127,20 @@ export async function submitPartyRSVP({ partyId, guestIdsInParty, selectedIds })
     SET rsvp_status = 'yes'
     WHERE id = ANY(${selected}::uuid[])
   `;
+
+  // ✅ NEW: save dietary restrictions / accommodations for attending guests
+  const dietaryIds = Object.keys(dietary);
+  if (dietaryIds.length) {
+    for (const id of selected) {
+      if (!Object.prototype.hasOwnProperty.call(dietary, id)) continue;
+
+      await sql`
+        UPDATE guests
+        SET dietary_restrictions = ${String(dietary[id] || "")}
+        WHERE id = ${id}::uuid
+      `;
+    }
+  }
 
   // unselected => "no"
   const selectedSet = new Set(selected);
