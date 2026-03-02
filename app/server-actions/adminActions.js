@@ -187,3 +187,150 @@ export async function deleteGuest({ admin_password, guest_id }) {
 
   return { ok: true };
 }
+
+// -----------------------------
+// CSV Import (Admin)
+// -----------------------------
+
+function cleanStr(v) {
+  return String(v ?? "").trim();
+}
+
+function normalizeRsvp(v) {
+  const s = cleanStr(v).toLowerCase();
+  if (!s) return null;
+
+  // allow a few common variants
+  if (["yes", "y", "true", "1", "attending", "accept"].includes(s)) return "yes";
+  if (["no", "n", "false", "0", "decline", "not attending"].includes(s)) return "no";
+
+  // if it’s something else, ignore it
+  return null;
+}
+
+async function getOrCreatePartyIdByName(sql, partyNameRaw) {
+  const partyName = cleanStr(partyNameRaw);
+  if (!partyName) return null;
+
+  const existing = await sql`
+    SELECT id
+    FROM parties
+    WHERE name = ${partyName}
+    LIMIT 1
+  `;
+  if (existing?.[0]?.id) return existing[0].id;
+
+  const created = await sql`
+    INSERT INTO parties (name)
+    VALUES (${partyName})
+    RETURNING id
+  `;
+  return created?.[0]?.id ?? null;
+}
+
+/**
+ * rows: Array<object> (objects keyed by CSV header)
+ * mapping:
+ *   {
+ *     first_name: "CSV Header",
+ *     last_name: "CSV Header",
+ *     party_name: "CSV Header" (optional),
+ *     rsvp_status: "CSV Header" (optional),
+ *     dietary_restrictions: "CSV Header" (optional),
+ *   }
+ * defaultPartyName: string used if party column isn't mapped or row party is blank
+ */
+export async function importGuestsFromCsv({
+  admin_password,
+  rows,
+  mapping,
+  defaultPartyName,
+}) {
+  if (!confirmsAdmin(admin_password)) {
+    return { ok: false, error: "Incorrect admin password." };
+  }
+
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const map = mapping && typeof mapping === "object" ? mapping : {};
+
+  const firstKey = map.first_name;
+  const lastKey = map.last_name;
+
+  if (!firstKey || !lastKey) {
+    return {
+      ok: false,
+      error: "Please map First Name and Last Name before importing.",
+    };
+  }
+
+  const partyKey = map.party_name || "";
+  const rsvpKey = map.rsvp_status || "";
+  const dietKey = map.dietary_restrictions || "";
+
+  const fallbackParty = cleanStr(defaultPartyName || "Imported Guests");
+
+  const sql = sqlClient();
+
+  let inserted = 0;
+  let skipped = 0;
+  let partiesCreated = 0;
+
+  // cache party name -> uuid to reduce queries
+  const partyIdCache = new Map();
+
+  for (const row of safeRows) {
+    const first = cleanStr(row?.[firstKey]);
+    const last = cleanStr(row?.[lastKey]);
+
+    if (!first || !last) {
+      skipped++;
+      continue;
+    }
+
+    const partyNameFromRow = partyKey ? cleanStr(row?.[partyKey]) : "";
+    const partyName = partyNameFromRow || fallbackParty;
+
+    let partyId = null;
+
+    if (partyName) {
+      if (partyIdCache.has(partyName)) {
+        partyId = partyIdCache.get(partyName);
+      } else {
+        // detect create vs existing for reporting
+        const existing = await sql`
+          SELECT id
+          FROM parties
+          WHERE name = ${partyName}
+          LIMIT 1
+        `;
+
+        if (existing?.[0]?.id) {
+          partyId = existing[0].id;
+        } else {
+          const created = await sql`
+            INSERT INTO parties (name)
+            VALUES (${partyName})
+            RETURNING id
+          `;
+          partyId = created?.[0]?.id ?? null;
+          if (partyId) partiesCreated++;
+        }
+
+        partyIdCache.set(partyName, partyId);
+      }
+    }
+
+    const rsvp = rsvpKey ? normalizeRsvp(row?.[rsvpKey]) : null;
+    const dietary = dietKey ? cleanStr(row?.[dietKey]) : "";
+    const dietaryOrNull = dietary ? dietary : null;
+
+    await sql`
+      INSERT INTO guests (first_name, last_name, party_id, rsvp_status, dietary_restrictions)
+      VALUES (${first}, ${last}, ${partyId}, ${rsvp}, ${dietaryOrNull})
+    `;
+
+    inserted++;
+  }
+
+  return { ok: true, inserted, skipped, partiesCreated };
+}

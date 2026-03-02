@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Container from "react-bootstrap/Container";
 import {
   getPartiesWithGuests,
@@ -10,10 +10,80 @@ import {
   createGuest,
   updateGuest,
   deleteGuest,
+  importGuestsFromCsv, // ✅ make sure you added this in adminActions
 } from "../server-actions/adminActions";
 
 function fullName(g) {
   return `${g.first_name} ${g.last_name}`.trim();
+}
+
+/**
+ * Robust-ish CSV parser (handles quoted commas + newlines).
+ * Returns: { headers: string[], rows: object[] }
+ */
+function parseCsvToObjects(csvText) {
+  const text = String(csvText || "");
+  if (!text.trim()) return { headers: [], rows: [] };
+
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const next = text[i + 1];
+
+    if (c === '"') {
+      if (inQuotes && next === '"') {
+        field += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (c === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if ((c === "\n" || c === "\r") && !inQuotes) {
+      // handle CRLF
+      if (c === "\r" && next === "\n") i++;
+      row.push(field);
+      field = "";
+
+      // ignore empty trailing lines
+      if (row.some((v) => String(v || "").trim() !== "")) rows.push(row);
+      row = [];
+      continue;
+    }
+
+    field += c;
+  }
+
+  // last field
+  row.push(field);
+  if (row.some((v) => String(v || "").trim() !== "")) rows.push(row);
+
+  if (rows.length === 0) return { headers: [], rows: [] };
+
+  const rawHeaders = rows[0].map((h) => String(h || "").trim());
+  const headers = rawHeaders.map((h, idx) => (h ? h : `Column ${idx + 1}`));
+
+  const body = rows.slice(1);
+  const objects = body.map((r) => {
+    const obj = {};
+    headers.forEach((h, idx) => {
+      obj[h] = r[idx] ?? "";
+    });
+    return obj;
+  });
+
+  return { headers, rows: objects };
 }
 
 export default function AdminPage() {
@@ -31,8 +101,8 @@ export default function AdminPage() {
   const [editingPartyId, setEditingPartyId] = useState(null);
   const [editingPartyName, setEditingPartyName] = useState("");
 
-  // Guest create per party (keep it simple in one object)
-  const [newGuestByParty, setNewGuestByParty] = useState({}); // { [partyId]: { first,last } }
+  // Guest create per party
+  const [newGuestByParty, setNewGuestByParty] = useState({});
 
   // Guest edit
   const [editingGuestId, setEditingGuestId] = useState(null);
@@ -43,6 +113,24 @@ export default function AdminPage() {
     rsvp_status: "",
     party_id: "",
   });
+
+  // ✅ CSV import state
+  const [csvName, setCsvName] = useState("");
+  const [csvHeaders, setCsvHeaders] = useState([]);
+  const [csvRows, setCsvRows] = useState([]);
+  const [csvError, setCsvError] = useState("");
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResult, setCsvResult] = useState(null);
+
+  const [csvMapping, setCsvMapping] = useState({
+    first_name: "",
+    last_name: "",
+    party_name: "",
+    rsvp_status: "",
+    dietary_restrictions: "",
+  });
+
+  const [defaultPartyName, setDefaultPartyName] = useState("Imported Guests");
 
   const ink = "#544f44";
   const thinRule = "rgba(84, 79, 68, 0.35)";
@@ -71,7 +159,6 @@ export default function AdminPage() {
     e.preventDefault();
     setAuthError("");
     setAuthed(true);
-    // try loading; if password wrong, refresh() will kick you back
     await refresh();
   };
 
@@ -171,8 +258,7 @@ export default function AdminPage() {
       first_name: editingGuest.first_name,
       last_name: editingGuest.last_name,
       party_id: editingGuest.party_id || null,
-      dietary_restrictions:
-        editingGuest.dietary_restrictions.trim() || null,
+      dietary_restrictions: editingGuest.dietary_restrictions.trim() || null,
       rsvp_status: editingGuest.rsvp_status || null,
     });
 
@@ -194,6 +280,127 @@ export default function AdminPage() {
 
     await deleteGuest({ admin_password: adminPassword, guest_id: guestId });
     await refresh();
+  };
+
+  // -----------------------
+  // CSV Import handlers
+  // -----------------------
+  const onCsvPicked = async (file) => {
+    setCsvError("");
+    setCsvResult(null);
+
+    if (!file) {
+      setCsvName("");
+      setCsvHeaders([]);
+      setCsvRows([]);
+      setCsvMapping({
+        first_name: "",
+        last_name: "",
+        party_name: "",
+        rsvp_status: "",
+        dietary_restrictions: "",
+      });
+      return;
+    }
+
+    if (!String(file.name || "").toLowerCase().endsWith(".csv")) {
+      setCsvError("Please upload a .csv file.");
+      return;
+    }
+
+    setCsvName(file.name);
+
+    try {
+      const text = await file.text();
+      const parsed = parseCsvToObjects(text);
+
+      if (!parsed.headers.length) {
+        setCsvError("We couldn’t read headers from that CSV.");
+        setCsvHeaders([]);
+        setCsvRows([]);
+        return;
+      }
+
+      setCsvHeaders(parsed.headers);
+      setCsvRows(parsed.rows);
+
+      // auto-suggest mappings by common header names
+      const lower = parsed.headers.map((h) => h.toLowerCase().trim());
+      const pick = (candidates) => {
+        const idx = lower.findIndex((h) => candidates.includes(h));
+        return idx >= 0 ? parsed.headers[idx] : "";
+      };
+
+      setCsvMapping((prev) => ({
+        ...prev,
+        first_name: pick(["first_name", "first name", "firstname", "givenname", "given name"]),
+        last_name: pick(["last_name", "last name", "lastname", "surname", "familyname", "family name"]),
+        party_name: pick(["party", "party_name", "party name", "group", "group_name", "group name", "household", "household_name", "household name"]),
+        rsvp_status: pick(["rsvp", "rsvp_status", "rsvp status", "status", "attending"]),
+        dietary_restrictions: pick(["diet", "dietary", "dietary_restrictions", "dietary restrictions", "restrictions", "notes"]),
+      }));
+    } catch (err) {
+      setCsvError("Something went wrong reading that file.");
+      setCsvHeaders([]);
+      setCsvRows([]);
+    }
+  };
+
+  const canImport =
+    csvRows.length > 0 &&
+    csvMapping.first_name &&
+    csvMapping.last_name &&
+    !csvImporting;
+
+  const runCsvImport = async () => {
+    setCsvError("");
+    setCsvResult(null);
+
+    if (!csvMapping.first_name || !csvMapping.last_name) {
+      setCsvError("Please map First Name and Last Name.");
+      return;
+    }
+
+    if (!csvRows.length) {
+      setCsvError("No rows found to import.");
+      return;
+    }
+
+    // guard: prevent accidental massive uploads
+    if (csvRows.length > 5000) {
+      setCsvError(
+        "This file has more than 5,000 rows. Please split it into smaller files before importing."
+      );
+      return;
+    }
+
+    setCsvImporting(true);
+    try {
+      const res = await importGuestsFromCsv({
+        admin_password: adminPassword,
+        rows: csvRows,
+        mapping: {
+          first_name: csvMapping.first_name,
+          last_name: csvMapping.last_name,
+          party_name: csvMapping.party_name || "",
+          rsvp_status: csvMapping.rsvp_status || "",
+          dietary_restrictions: csvMapping.dietary_restrictions || "",
+        },
+        defaultPartyName: defaultPartyName || "Imported Guests",
+      });
+
+      if (!res?.ok) {
+        setCsvError(res?.error || "Import failed.");
+        return;
+      }
+
+      setCsvResult(res);
+      await refresh();
+    } catch (err) {
+      setCsvError("Import failed. Please try again.");
+    } finally {
+      setCsvImporting(false);
+    }
   };
 
   // -----------------------
@@ -222,10 +429,18 @@ export default function AdminPage() {
     letterSpacing: "0.16em",
     textTransform: "uppercase",
     cursor: "pointer",
+    opacity: csvImporting ? 0.7 : 1,
   });
 
+  const labelStyle = {
+    margin: "0 0 8px",
+    fontSize: 12,
+    letterSpacing: "0.18em",
+    opacity: 0.75,
+    textTransform: "uppercase",
+  };
+
   if (!authed) {
-    // ✅ RSVP-style password gate
     return (
       <main
         style={{
@@ -348,6 +563,259 @@ export default function AdminPage() {
             </p>
           )}
         </div>
+
+        {/* ✅ CSV Import */}
+        <section
+          style={{
+            maxWidth: 820,
+            margin: "0 auto 34px",
+            padding: "18px 16px",
+            borderTop: `1px solid ${thinRule}`,
+            borderBottom: `1px solid ${thinRule}`,
+          }}
+        >
+          <p className="font-subheader" style={{ margin: "0 0 14px", fontSize: 12, letterSpacing: "0.18em", opacity: 0.8 }}>
+            Import Guests (CSV)
+          </p>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e) => onCsvPicked(e.target.files?.[0])}
+              style={{
+                ...fieldStyle,
+                maxWidth: 520,
+                borderRadius: 14,
+                padding: "10px 12px",
+              }}
+            />
+
+            <button
+              type="button"
+              style={btnStyle(false)}
+              onClick={() => {
+                setCsvName("");
+                setCsvHeaders([]);
+                setCsvRows([]);
+                setCsvError("");
+                setCsvResult(null);
+                setCsvMapping({
+                  first_name: "",
+                  last_name: "",
+                  party_name: "",
+                  rsvp_status: "",
+                  dietary_restrictions: "",
+                });
+              }}
+            >
+              Clear
+            </button>
+          </div>
+
+          {csvName && (
+            <div className="font-subheader" style={{ marginTop: 12, fontSize: 11, letterSpacing: "0.16em", opacity: 0.55, textTransform: "uppercase" }}>
+              File: {csvName} · Rows: {csvRows.length}
+            </div>
+          )}
+
+          {/* Mapping UI */}
+          {csvHeaders.length > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gap: 12,
+                  alignItems: "end",
+                }}
+              >
+                <div>
+                  <p className="font-subheader" style={labelStyle}>First Name (required)</p>
+                  <select
+                    value={csvMapping.first_name}
+                    onChange={(e) => setCsvMapping((p) => ({ ...p, first_name: e.target.value }))}
+                    style={{ ...fieldStyle, maxWidth: "100%" }}
+                  >
+                    <option value="">Select column…</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="font-subheader" style={labelStyle}>Last Name (required)</p>
+                  <select
+                    value={csvMapping.last_name}
+                    onChange={(e) => setCsvMapping((p) => ({ ...p, last_name: e.target.value }))}
+                    style={{ ...fieldStyle, maxWidth: "100%" }}
+                  >
+                    <option value="">Select column…</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="font-subheader" style={labelStyle}>Party Name (optional)</p>
+                  <select
+                    value={csvMapping.party_name}
+                    onChange={(e) => setCsvMapping((p) => ({ ...p, party_name: e.target.value }))}
+                    style={{ ...fieldStyle, maxWidth: "100%" }}
+                  >
+                    <option value="">(none)</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="font-subheader" style={labelStyle}>RSVP Status (optional)</p>
+                  <select
+                    value={csvMapping.rsvp_status}
+                    onChange={(e) => setCsvMapping((p) => ({ ...p, rsvp_status: e.target.value }))}
+                    style={{ ...fieldStyle, maxWidth: "100%" }}
+                  >
+                    <option value="">(none)</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="font-subheader" style={labelStyle}>Dietary Restrictions (optional)</p>
+                  <select
+                    value={csvMapping.dietary_restrictions}
+                    onChange={(e) => setCsvMapping((p) => ({ ...p, dietary_restrictions: e.target.value }))}
+                    style={{ ...fieldStyle, maxWidth: "100%" }}
+                  >
+                    <option value="">(none)</option>
+                    {csvHeaders.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="font-subheader" style={labelStyle}>Default Party Name</p>
+                  <input
+                    value={defaultPartyName}
+                    onChange={(e) => setDefaultPartyName(e.target.value)}
+                    placeholder="Imported Guests"
+                    style={{ ...fieldStyle, maxWidth: "100%" }}
+                  />
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div style={{ marginTop: 16 }}>
+                <p className="font-subheader" style={{ ...labelStyle, marginBottom: 10 }}>
+                  Preview (first 3 rows)
+                </p>
+
+                <div
+                  style={{
+                    border: `1px solid ${thinRule}`,
+                    borderRadius: 14,
+                    padding: 12,
+                    overflowX: "auto",
+                    background: "rgba(255,255,255,0.35)",
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+                    <thead>
+                      <tr>
+                        {["First", "Last", "Party", "RSVP", "Dietary"].map((h) => (
+                          <th
+                            key={h}
+                            className="font-subheader"
+                            style={{
+                              textAlign: "left",
+                              fontSize: 11,
+                              letterSpacing: "0.16em",
+                              textTransform: "uppercase",
+                              opacity: 0.7,
+                              padding: "8px 10px",
+                              borderBottom: `1px solid ${thinRule}`,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvRows.slice(0, 3).map((r, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: "8px 10px", borderBottom: `1px solid rgba(84,79,68,0.12)` }}>
+                            {String(r[csvMapping.first_name] || "")}
+                          </td>
+                          <td style={{ padding: "8px 10px", borderBottom: `1px solid rgba(84,79,68,0.12)` }}>
+                            {String(r[csvMapping.last_name] || "")}
+                          </td>
+                          <td style={{ padding: "8px 10px", borderBottom: `1px solid rgba(84,79,68,0.12)` }}>
+                            {csvMapping.party_name
+                              ? String(r[csvMapping.party_name] || defaultPartyName || "")
+                              : (defaultPartyName || "")}
+                          </td>
+                          <td style={{ padding: "8px 10px", borderBottom: `1px solid rgba(84,79,68,0.12)` }}>
+                            {csvMapping.rsvp_status ? String(r[csvMapping.rsvp_status] || "") : "—"}
+                          </td>
+                          <td style={{ padding: "8px 10px", borderBottom: `1px solid rgba(84,79,68,0.12)` }}>
+                            {csvMapping.dietary_restrictions ? String(r[csvMapping.dietary_restrictions] || "") : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                  <button type="button" style={btnStyle(true)} disabled={!canImport} onClick={runCsvImport}>
+                    {csvImporting ? "Importing…" : "Import Guests"}
+                  </button>
+
+                  <div className="font-subheader" style={{ fontSize: 11, letterSpacing: "0.16em", opacity: 0.6, textTransform: "uppercase" }}>
+                    First + Last name are required. Parties will be created automatically.
+                  </div>
+                </div>
+
+                {csvError && (
+                  <p className="font-subheader" style={{ marginTop: 12, fontSize: 12, letterSpacing: "0.16em", opacity: 0.75, textTransform: "uppercase", lineHeight: 1.8 }}>
+                    {csvError}
+                  </p>
+                )}
+
+                {csvResult?.ok && (
+                  <p className="font-subheader" style={{ marginTop: 12, fontSize: 12, letterSpacing: "0.16em", opacity: 0.75, textTransform: "uppercase", lineHeight: 1.8 }}>
+                    Imported {csvResult.inserted} guests · Skipped {csvResult.skipped} · Created {csvResult.partiesCreated} parties
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {csvHeaders.length === 0 && csvError && (
+            <p className="font-subheader" style={{ marginTop: 12, fontSize: 12, letterSpacing: "0.16em", opacity: 0.75, textTransform: "uppercase", lineHeight: 1.8 }}>
+              {csvError}
+            </p>
+          )}
+        </section>
 
         {/* Create Party */}
         <section
