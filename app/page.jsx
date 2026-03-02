@@ -1,4 +1,5 @@
-import Image from "next/image";
+"use client";
+
 import Container from "react-bootstrap/Container";
 import Link from "next/link";
 
@@ -14,27 +15,38 @@ export default function Page() {
             flexDirection: "column",
           }}
         >
-          {/* Top watercolor image */}
+          {/* Top hero video (plays once, then freezes like an image) */}
           <div
             className="mx-auto w-100 w-md-75 w-lg-50"
             style={{
               position: "relative",
-              height: "26svh",     // ⬅️ smaller than 32svh
-              minHeight: 170,      // ⬅️ smaller
-              maxHeight: 280,      // ⬅️ smaller
+              height: "26svh",
+              minHeight: 170,
+              maxHeight: 280,
               overflow: "hidden",
               background: "#fbfaf7",
             }}
           >
-            <Image
-              src="/koi-bright.png"
-              alt="Raye and Grant Get Married"
-              fill
-              priority
+            <video
+              src="/koi-video.mp4" // ✅ put your mp4 in /public and name it grok-video.mp4
+              autoPlay
+              muted
+              playsInline
+              preload="auto"
+              onEnded={(e) => {
+                // freeze on last frame
+                const v = e.currentTarget;
+                v.pause();
+                v.currentTime = v.duration;
+              }}
               style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
                 objectFit: "contain",
                 objectPosition: "center",
-                opacity: "70%",
+                opacity: 0.7,
               }}
             />
           </div>
@@ -45,18 +57,18 @@ export default function Page() {
               flex: 1,
               background: "#fbfaf7",
               textAlign: "center",
-              padding: "28px 18px 28px", // ⬅️ was 48px 22px 54px
+              padding: "28px 18px 28px",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "flex-start", // ⬅️ pulls text up
+              justifyContent: "flex-start",
               color: "#544f44",
             }}
           >
             <h1
               className="font-header font-header--hero"
-              style={{                
+              style={{
                 lineHeight: 1.05,
-                marginBottom: 35, // ⬅️ tighter
+                marginBottom: 35,
               }}
             >
               Welcome to our Wedding Website!
@@ -70,10 +82,10 @@ export default function Page() {
               Submit Your RSVP
             </Link>
 
-            <div style={{ maxWidth: 700, margin: "0 auto", marginTop: "14px", }}>
+            <div style={{ maxWidth: 700, margin: "0 auto", marginTop: 14 }}>
               <p style={{ fontSize: 16, marginBottom: 10 }}>
                 This site has everything you’ll need for the weekend, including event details,
-                travel information, and RSVP's.
+                travel information, and RSVP&apos;s.
               </p>
               <p style={{ fontSize: 16, marginBottom: 12 }}>
                 Please check back as we get closer to the date.
@@ -90,7 +102,7 @@ export default function Page() {
                 alignItems: "baseline",
                 justifyContent: "center",
                 gap: 10,
-                marginTop: 6,                
+                marginTop: 6,
               }}
             >
               <span style={{ fontSize: 18, opacity: 0.7 }}>—</span>
@@ -103,10 +115,30 @@ export default function Page() {
               >
                 Raye &amp; Grant
               </span>
-            </div>            
+            </div>
           </div>
         </div>
       </Container>
+
+      {/* Button hover/tap: enlarge (no black hover) */}
+      <style jsx global>{`
+        .rsvp-button {
+          display: inline-block;
+          text-decoration: none;
+          transform: translateZ(0);
+          transition: transform 180ms ease;
+        }
+
+        /* desktop hover */
+        .rsvp-button:hover {
+          transform: scale(1.06);
+        }
+
+        /* mobile tap/press */
+        .rsvp-button:active {
+          transform: scale(1.08);
+        }
+      `}</style>
     </main>
   );
 }
