@@ -26,7 +26,7 @@ export default function SchedulePage() {
 
   const subCopyStyle = {
     marginTop: 18,
-    marginBottom: 14,
+    marginBottom: 2,
     opacity: 0.75,
     letterSpacing: "0.20em",
     lineHeight: 1.9,
