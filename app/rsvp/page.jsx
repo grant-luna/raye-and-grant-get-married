@@ -124,9 +124,8 @@ export default function RSVPPage() {
   const confidenceText = useMemo(() => {
     if (!match) return "";
     const c = match.confidence;
-    if (c >= 0.9) return "We found your party";
-    if (c >= 0.75) return "We think we found your party";
-    return "We found a possible match";
+    if (c >= 0.9) return "We found your party";    
+    return "We think we found your party";
   }, [match]);
 
   const selectedGuests = useMemo(() => {

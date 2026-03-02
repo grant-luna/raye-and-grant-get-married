@@ -139,13 +139,16 @@ h6 {
   font-family: var(--font-subheader);
   font-weight: 600;
   font-size: 13px;
-  transition: all 0.25s ease;
   width: 200px;
-  margin: 10 auto;
+  margin: 10px auto;
+
+  transition: transform 0.25s ease, opacity 0.25s ease;
 }
 
-/* Elegant hover */
-.rsvp-button:hover {
-  background-color: #544f44;
-  color: #fbfaf7;
+/* Desktop hover only */
+@media (hover: hover) {
+  .rsvp-button:hover {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
 }
