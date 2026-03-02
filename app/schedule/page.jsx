@@ -98,9 +98,7 @@ export default function SchedulePage() {
                 
           {/* ✅ Temporary message */}
           <p className="font-subheader" style={subCopyStyle}>
-            Please check back in closer to the wedding weekend
-            <br />
-            for details about our welcome celebration!
+            Please check back in closer to the wedding weekend for details about our welcome celebration!
           </p>
                 
           {/*
@@ -194,9 +192,7 @@ export default function SchedulePage() {
           </div>
 
           <p className="font-subheader" style={subCopyStyle}>
-            Please check back in closer to the wedding weekend
-            <br />
-            for details about our welcome celebration!
+            Please check back in closer to the wedding weekend for details about our welcome celebration!
           </p>
         </section>
       </Container>
