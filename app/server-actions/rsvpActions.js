@@ -46,22 +46,25 @@ export async function findPartyMatchByName(input) {
   const q = String(input || "").trim();
   if (!q) return null;
 
-  // For weddings this is usually small enough. If you had 50k guests,
-  // we'd do token filtering in SQL first.
   const guests = await sql`
     SELECT id, first_name, last_name, party_id, rsvp_status, dietary_restrictions
     FROM guests
   `;
 
   let best = null;
+
   for (const g of guests) {
     const score = similarityScore(q, fullName(g));
-    if (!best || score > best.score) best = { guest: g, score };
+    if (!best || score > best.score) {
+      best = { guest: g, score };
+    }
   }
 
   if (!best) return null;
 
-  // If guest has no party_id, treat them as a “solo party”
+  // ✅ NEW: enforce minimum confidence threshold (50%)
+  if (best.score < 0.5) return null;
+
   const partyId = best.guest.party_id;
 
   let party = null;
@@ -74,6 +77,7 @@ export async function findPartyMatchByName(input) {
       WHERE id = ${partyId}
       LIMIT 1
     `;
+
     party = parties?.[0] || { id: partyId, name: "Your Party" };
 
     partyGuests = await sql`

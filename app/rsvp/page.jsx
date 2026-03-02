@@ -26,6 +26,9 @@ export default function RSVPPage() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [showDeclinePrompt, setShowDeclinePrompt] = useState(false);
 
+  // ✅ NEW: show "couldn't find your party" prompt
+  const [showNoMatchPrompt, setShowNoMatchPrompt] = useState(false);
+
   // Dietary restrictions per guest id
   const [dietaryByGuestId, setDietaryByGuestId] = useState({});
 
@@ -75,8 +78,14 @@ export default function RSVPPage() {
     setSaveError("");
 
     const res = await findPartyMatchByName(q);
-    if (!res) return;
 
+    // ✅ NEW: show friendly prompt instead of failing silently
+    if (!res) {
+      setShowNoMatchPrompt(true);
+      return;
+    }
+
+    setShowNoMatchPrompt(false);
     setMatch(res);
 
     // pre-check based on existing rsvp_status
@@ -107,6 +116,7 @@ export default function RSVPPage() {
     setSelectedIds(new Set());
     setDietaryByGuestId({});
     setShowDeclinePrompt(false);
+    setShowNoMatchPrompt(false);
     setSaveError("");
     setIsSaving(false);
     lastSavedSignatureRef.current = "";
@@ -124,7 +134,7 @@ export default function RSVPPage() {
   const confidenceText = useMemo(() => {
     if (!match) return "";
     const c = match.confidence;
-    if (c >= 0.9) return "We found your party";    
+    if (c >= 0.9) return "We found your party";
     return "We think we found your party";
   }, [match]);
 
@@ -150,14 +160,16 @@ export default function RSVPPage() {
     // Decline
     if (selectedCount === 0) {
       return {
-        line1: `${formatNameList(partyNames).toUpperCase()} REGRETFULLY DECLINE${partyCount === 1 ? "S" : ""}`,        
+        line1: `${formatNameList(partyNames).toUpperCase()} REGRETFULLY DECLINE${
+          partyCount === 1 ? "S" : ""
+        }`,
         isAttending: false,
       };
     }
 
-    // Attending    
+    // Attending
     return {
-      line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE JOINING US`,      
+      line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE JOINING US`,
       isAttending: true,
     };
   }, [selectedNames, partyNames]);
@@ -193,13 +205,16 @@ export default function RSVPPage() {
   };
 
   const ArrowLine = ({ side = "left" }) => (
-    <span aria-hidden style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+    <span
+      aria-hidden
+      style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+    >
       {side === "left" ? (
         <>
-          <span style={{ fontSize: 22, color: ink, lineHeight: 1 }}>←</span>          
+          <span style={{ fontSize: 22, color: ink, lineHeight: 1 }}>←</span>
         </>
       ) : (
-        <>          
+        <>
           <span style={{ fontSize: 22, color: ink, lineHeight: 1 }}>→</span>
         </>
       )}
@@ -214,7 +229,7 @@ export default function RSVPPage() {
     }
     setShowDeclinePrompt(false);
     setSaveError("");
-    setStep("dietary"); // ✅ new step
+    setStep("dietary");
   };
 
   const confirmDecline = () => {
@@ -262,7 +277,7 @@ export default function RSVPPage() {
           partyId: match.party?.id ?? null,
           guestIdsInParty,
           selectedIds: selected, // may be empty => decline
-          dietaryByGuestId: dietarySelected, // ✅ new payload
+          dietaryByGuestId: dietarySelected,
         });
 
         lastSavedSignatureRef.current = signature;
@@ -298,7 +313,8 @@ export default function RSVPPage() {
         onClick={() => {
           setShowDeclinePrompt(false);
 
-          if (step === "confirm") setStep(selectedIds.size > 0 ? "dietary" : "party");
+          if (step === "confirm")
+            setStep(selectedIds.size > 0 ? "dietary" : "party");
           else if (step === "dietary") setStep("party");
           else if (step === "thanks") setStep("confirm");
           else handleNotYou();
@@ -365,7 +381,7 @@ export default function RSVPPage() {
           style={{
             fontSize: "clamp(62px, 10vw, 96px)",
             marginBottom: 18,
-            letterSpacing: ".3em", // ✅ more space between R S V P
+            letterSpacing: ".3em",
           }}
         >
           RSVP
@@ -411,7 +427,10 @@ export default function RSVPPage() {
                 type="text"
                 name="fullName"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (showNoMatchPrompt) setShowNoMatchPrompt(false);
+                }}
                 autoComplete="name"
                 className="form-control"
                 style={{
@@ -449,6 +468,64 @@ export default function RSVPPage() {
                 →
               </button>
             </form>
+
+            {/* ✅ NEW: no-match prompt */}
+            {showNoMatchPrompt && (
+              <div
+                style={{
+                  maxWidth: 560,
+                  margin: "26px auto 0",
+                  padding: "18px 16px",
+                  borderTop: `1px solid ${thinRule}`,
+                  borderBottom: `1px solid ${thinRule}`,
+                }}
+              >
+                <p
+                  className="font-subheader"
+                  style={{
+                    margin: 0,
+                    fontSize: 13,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    opacity: 0.8,
+                    lineHeight: 1.8,
+                  }}
+                >
+                  We&apos;re sorry, we couldn&apos;t find your party!
+                  <br />
+                  Please try again and make sure you enter your full name.
+                  If you still can&apos;t find your party, please reach out to us.
+                </p>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 16,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setShowNoMatchPrompt(false)}
+                    style={{
+                      background: "transparent",
+                      border: `1px solid ${thinRule}`,
+                      color: ink,
+                      borderRadius: 999,
+                      padding: "10px 18px",
+                      fontFamily: "var(--font-body)",
+                      fontSize: 12,
+                      letterSpacing: "0.16em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Okay
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : step === "party" ? (
           <>
@@ -701,13 +778,21 @@ export default function RSVPPage() {
         ) : step === "confirm" ? (
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
-              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 28 }}>
+              <p
+                className="font-subheader"
+                style={{ ...centerCopyStyle, marginBottom: 28 }}
+              >
                 {confirmCopy.line1}
               </p>
 
-              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 10 }}>
-                {confirmCopy.line2}
-              </p>
+              {confirmCopy.line2 ? (
+                <p
+                  className="font-subheader"
+                  style={{ ...centerCopyStyle, marginBottom: 10 }}
+                >
+                  {confirmCopy.line2}
+                </p>
+              ) : null}
 
               {saveError && (
                 <p
@@ -732,11 +817,17 @@ export default function RSVPPage() {
         ) : (
           <>
             <div style={{ marginTop: 10, maxWidth: 720, marginInline: "auto" }}>
-              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 18 }}>
+              <p
+                className="font-subheader"
+                style={{ ...centerCopyStyle, marginBottom: 18 }}
+              >
                 {thanksCopy.line1}
               </p>
 
-              <p className="font-subheader" style={{ ...centerCopyStyle, marginBottom: 18 }}>
+              <p
+                className="font-subheader"
+                style={{ ...centerCopyStyle, marginBottom: 18 }}
+              >
                 {thanksCopy.line2}
               </p>
             </div>
