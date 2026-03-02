@@ -156,8 +156,7 @@ export default function RSVPPage() {
       };
     }
 
-    // Attending
-    const verb = selectedCount === 1 ? "IS" : "WILL BE";
+    // Attending    
     return {
       line1: `${formatNameList(selectedNames).toUpperCase()} WILL BE JOINING US`,      
       isAttending: true,
