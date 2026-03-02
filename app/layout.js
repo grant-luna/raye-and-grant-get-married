@@ -4,6 +4,25 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from '@vercel/analytics/next';
 
+/* ✅ SEO METADATA (controls what shows in Google results + link previews) */
+export const metadata = {
+  title: {
+    default: "Raye & Grant",
+    template: "%s | Raye & Grant",
+  },
+  description:
+    "Welcome to our wedding website. Find event details, travel information, and RSVP here.",
+  metadataBase: new URL("https://www.rayeandgrantgetmarried.com"),
+  openGraph: {
+    title: "Raye & Grant",
+    description:
+      "Welcome to our wedding website. Find event details, travel information, and RSVP here.",
+    url: "https://www.rayeandgrantgetmarried.com",
+    siteName: "Raye & Grant",
+    type: "website",
+  },
+};
+
 /* BODY — Cormorant Garamond */
 const bodyFont = localFont({
   src: [
@@ -56,4 +75,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-// PJKL-QRWJ

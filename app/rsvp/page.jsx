@@ -364,7 +364,7 @@ export default function RSVPPage() {
         <h1
           className="font-header"
           style={{
-            fontSize: "clamp(56px, 6vw, 72px)",
+            fontSize: "clamp(62px, 10vw, 96px)",
             marginBottom: 18,
             letterSpacing: ".3em", // ✅ more space between R S V P
           }}

@@ -10,9 +10,9 @@ export default function FAQsPage() {
   };
 
   const questionStyle = {
-    fontSize: 16,
+    fontSize: 20,
     letterSpacing: "0.18em",
-    marginBottom: 18,
+    marginBottom: 6,
     textTransform: "uppercase",
   };
 
@@ -20,14 +20,14 @@ export default function FAQsPage() {
     fontFamily: "var(--font-body)",
     fontSize: 18,
     fontStyle: "italic",
-    lineHeight: 1.9,
+    lineHeight: 1.5,
     opacity: 0.75,
     maxWidth: 640,
     margin: "0 auto",
   };
 
   const labelStyle = {
-    marginTop: 32,
+    marginTop: 16,
     fontSize: 15,
     letterSpacing: "0.16em",
     opacity: 0.7,
@@ -44,7 +44,7 @@ export default function FAQsPage() {
     >
       <Container
         style={{
-          paddingTop: 110,
+          paddingTop: "clamp(25px, 10vw, 60px)",
           paddingBottom: 90,
           textAlign: "center",
           maxWidth: 760,
@@ -56,13 +56,11 @@ export default function FAQsPage() {
           style={{
             marginBottom: 72,
             color: ink,
-            fontSize: "clamp(72px, 10vw, 120px)",
+            fontSize: "clamp(55px, 10vw, 80px)",
             lineHeight: 1.02,
           }}
         >
-          Frequently Asked
-          <br />
-          Questions
+          Frequently Asked Questions
         </h1>
 
         {/* QUESTION 1 */}
@@ -101,22 +99,20 @@ export default function FAQsPage() {
             What time should I arrive for the ceremony?
           </div>
 
-          <p style={bodyStyle}>
+          <p style={{ ...bodyStyle, marginBottom: 15 }}>
             The gardens will be open to guests starting at 5:00pm, and the
-            ceremony will begin promptly at 5:30.
-            <br />
-            <br />
+            ceremony will begin promptly at 5:30pm.
+          </p>
+
+          <p style={bodyStyle}>                                                
             Shuttles will be available from the parking lot to the garden
-            entrance.
-            <br />
-            <br />
-            If parking in Balboa Park, we recommend arriving 15 minutes early
+            entrance.  If parking in Balboa Park, we recommend arriving 15 minutes early
             to ensure you’ll have time to park and get to the venue.
           </p>
         </section>
 
         {/* QUESTION 3 */}
-        <section>
+        <section style={sectionSpacing}>
           <div className="font-subheader" style={questionStyle}>
             Can I bring someone who isn’t on my invitation?
           </div>
@@ -124,6 +120,33 @@ export default function FAQsPage() {
           <p style={bodyStyle}>
             Please reach out to us to see if we’ll have room to accommodate an
             extra person.
+          </p>
+        </section>
+
+        {/* QUESTION 4 */}
+        <section style={sectionSpacing}>
+          <div className="font-subheader" style={questionStyle}>
+            Where should I stay?
+          </div>
+
+          <p style={bodyStyle}>
+            We have reserved a hotel block for you at _____. Please refer to
+            the Travel section of our website for more details on
+            transportation or accommodations.
+          </p>
+        </section>
+
+        {/* QUESTION 5 */}
+        <section>
+          <div className="font-subheader" style={questionStyle}>
+            How should I get to the venue?
+          </div>
+
+          <p style={bodyStyle}>
+            Parking will be available at _____. A cart will be available to
+            shuttle you down to the venue. Two shuttles will also be running
+            from _____ to the venue. An Uber may drop you off closer to the
+            entrance.
           </p>
         </section>
       </Container>
