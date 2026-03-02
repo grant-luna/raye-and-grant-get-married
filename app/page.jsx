@@ -28,7 +28,7 @@ export default function Page() {
           >
             <Image
               src="/koi-bright.png"
-              alt="koi fish"
+              alt="Raye and Grant Get Married"
               fill
               priority
               style={{
