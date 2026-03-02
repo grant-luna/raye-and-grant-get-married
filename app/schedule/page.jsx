@@ -193,17 +193,11 @@ export default function SchedulePage() {
             Aug 23rd, 2026
           </div>
 
-          <div
-            className="font-subheader"
-            style={{
-              marginTop: 14,
-              letterSpacing: "0.22em",
-              opacity: 0.7,
-              fontSize: "clamp(14px, 2.6vw, 16px)",
-            }}
-          >
-            Thanks
-          </div>
+          <p className="font-subheader" style={subCopyStyle}>
+            Please check back in closer to the wedding weekend
+            <br />
+            for details about our welcome celebration!
+          </p>
         </section>
       </Container>
     </main>
