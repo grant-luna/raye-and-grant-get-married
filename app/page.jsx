@@ -1,9 +1,31 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Container from "react-bootstrap/Container";
 import Link from "next/link";
 
 export default function Page() {
+  const [phase, setPhase] = useState("video"); 
+  // "video" | "image"
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    const tryPlay = async () => {
+      try {
+        await v.play();
+      } catch {
+        // If autoplay is blocked, skip straight to the image
+        setPhase("image");
+      }
+    };
+
+    tryPlay();
+  }, []);
+
   return (
     <main style={{ minHeight: "100svh", display: "flex" }}>
       <Container fluid style={{ padding: 0 }}>
@@ -15,7 +37,7 @@ export default function Page() {
             flexDirection: "column",
           }}
         >
-          {/* Top hero video (plays once, then freezes like an image) */}
+          {/* Top hero: smooth crossfade from video to image */}
           <div
             className="mx-auto w-100 w-md-75 w-lg-50"
             style={{
@@ -27,28 +49,43 @@ export default function Page() {
               background: "#fbfaf7",
             }}
           >
-            <video
-              src="/koi-video.mp4" // ✅ put your mp4 in /public and name it grok-video.mp4
-              autoPlay
-              muted
-              playsInline
-              preload="auto"
-              onEnded={(e) => {
-                // freeze on last frame
-                const v = e.currentTarget;
-                v.pause();
-                v.currentTime = v.duration;
-              }}
+            {/* Image (fades in) */}
+            <Image
+              src="/koi-bright.png"
+              alt="Raye and Grant Get Married"
+              fill
+              priority
               style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
                 objectFit: "contain",
                 objectPosition: "center",
-                opacity: 0.7,
+                opacity: phase === "image" ? 0.7 : 0,
+                transition: "opacity 700ms cubic-bezier(.22,.61,.36,1)",
               }}
             />
+          
+            {/* Video (fades out) */}
+            {phase === "video" && (
+              <video
+                ref={videoRef}
+                src="/koi-video.mp4"
+                autoPlay
+                muted
+                playsInline
+                preload="auto"
+                onEnded={() => setPhase("image")}
+                onError={() => setPhase("image")}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  objectPosition: "center",
+                  opacity: phase === "video" ? 0.7 : 0,
+                  transition: "opacity 700ms cubic-bezier(.22,.61,.36,1)",
+                }}
+              />
+            )}
           </div>
 
           {/* Content panel */}
@@ -128,13 +165,9 @@ export default function Page() {
           transform: translateZ(0);
           transition: transform 180ms ease;
         }
-
-        /* desktop hover */
         .rsvp-button:hover {
           transform: scale(1.06);
         }
-
-        /* mobile tap/press */
         .rsvp-button:active {
           transform: scale(1.08);
         }
