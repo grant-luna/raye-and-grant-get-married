@@ -12,6 +12,8 @@ export default function TravelPage() {
     fontSize: "clamp(62px, 10vw, 96px)",
     lineHeight: 1.02,
     textAlign: "center",
+    width: "100%",
+    transform: "translateX(4px)", // ✅ optical centering for script font
   };
 
   const sectionTitleStyle = {
@@ -20,6 +22,8 @@ export default function TravelPage() {
     fontSize: "clamp(44px, 6.5vw, 54px)",
     lineHeight: 1.05,
     textAlign: "center",
+    width: "100%",
+    transform: "translateX(4px)", // ✅ optical centering for script font
   };
 
   // Matches your “venue” look (Cormorant SC via font-subheader)
@@ -124,6 +128,7 @@ export default function TravelPage() {
           paddingTop: "clamp(25px, 10vw, 60px)",
           paddingBottom: "clamp(60px, 10vw, 90px)",
           maxWidth: 760,
+          textAlign: "center",
         }}
       >
         {/* HERO */}
@@ -195,25 +200,10 @@ export default function TravelPage() {
             To The Venue
           </h2>
 
-          <VenueDetail
-            label="Parking:"
-            text="There will be parking available near the venue. Please note that it is approximately a 5–10 minute walk from the parking area to the venue entrance."
-          />
-
-          <VenueDetail
-            label="Rideshare:"
-            text="If you prefer to rideshare (Uber/Lyft), you may be dropped off directly at the venue entrance for added convenience."
-          />
-
-          <VenueDetail
-            label="Shuttle:"
-            text="We will be providing shuttle service from both hotels to the venue, as well as return shuttles back to the hotels at the end of the evening. Shuttle departure times will be shared closer to the wedding date."
-          />
-
           <div
             className="font-subheader"
             style={{
-              marginTop: 34,
+              marginTop: 16,
               letterSpacing: "0.20em",
               opacity: 0.75,
               textTransform: "uppercase",
@@ -229,6 +219,21 @@ export default function TravelPage() {
             We kindly ask guests to arrive between 5:00–5:15 PM to allow time for walking
             from parking and getting seated.
           </div>
+
+          <VenueDetail
+            label="Parking:"
+            text="There will be parking available near the venue. Please note that it is approximately a 5–10 minute walk from the parking area to the venue entrance."
+          />
+
+          <VenueDetail
+            label="Rideshare:"
+            text="If you prefer to rideshare (Uber/Lyft), you may be dropped off directly at the venue entrance for added convenience."
+          />
+
+          <VenueDetail
+            label="Shuttle:"
+            text="We will be providing shuttle service from both hotels to the venue, as well as return shuttles back to the hotels at the end of the evening. Shuttle departure times will be shared closer to the wedding date."
+          />          
         </section>
       </Container>
     </main>
