@@ -183,7 +183,7 @@ export default function TravelPage() {
             name="Marriott Marquis San Diego Marina"
             addressLine1="333 West Harbor Drive"
             addressLine2="San Diego, CA 92101"
-            description="A beautiful waterfront hotel in downtown San Diego with marina views and great on-site amenities."
+            description="A beautiful waterfront hotel in downtown San Diego with marina views and great on-site amenities included."
           />
         </section>
 
@@ -211,23 +211,33 @@ export default function TravelPage() {
           >
             Our ceremony will begin at 5:30
             <br />
-            We kindly ask guests to arrive between 5:00–5:15 PM to allow time for walking
-            from parking and getting seated.
+            We kindly ask guests to arrive between 5:00–5:15 PM to allow time to walk to the venue and enjoy the gardens before the ceremony
           </div>
 
           <VenueDetail
             label="Parking:"
-            text="There will be parking available near the venue. Please note that it is approximately a 5–10 minute walk from the parking area to the venue entrance. Rideshare drop-offs and carpooling is encouraged."
+            text="There will be parking available at the Organ Pavillion Parking lot, approximately a 5–10 minute walk from the venue entrance. There will be a small shuttle taking people from the lot to the venue entrance."
           />
 
           <VenueDetail
             label="Rideshare:"
-            text="If you prefer to rideshare (Uber/Lyft), you may be dropped off directly at the venue entrance for added convenience."
+              text={
+              <>
+                Rideshares like Uber or Lyft can drop guests off directly at the venue entrance. 
+                <br />
+                Please use the following address for rideshare drop-off:
+                <br />
+                2220 Paseo De Oro, San Diego CA 92101
+              </>
+            }
           />
 
           <VenueDetail
             label="Shuttle:"
-            text="We will be providing shuttle service from both hotels to the venue, as well as return shuttles back to the hotels at the end of the evening. Shuttle departure times will be shared closer to the wedding date."
+            text="We will be providing a shuttle service from the Marriott Marquis San Diego Marina to the venue, 
+            as well as return shuttles back to the hotel at the end of the evening. 
+            Shuttles will drop guests off near the venue entrance. 
+            Departure and pick-up times will be shared closer to the wedding date."
           />          
         </section>
       </Container>

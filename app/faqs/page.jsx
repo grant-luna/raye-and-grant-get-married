@@ -70,26 +70,24 @@ export default function FAQsPage() {
           </div>
 
           <p style={bodyStyle}>
-            We ask that you wear Garden Cocktail Attire—elevated but
-            comfortable and well-suited for an outdoor celebration.  Expect warm weather and a garden setting, so lighter colors and
-            breathable materials will feel right at home.
+            We ask that you dress in Garden Cocktail Attire
+            
+            Dress comfortably for an outdoor celebration, and expect warm weather and a garden setting. Breathable fabrics, white or light colors, and prints are encouraged!
           </p>
 
           <div className="font-subheader" style={labelStyle}>
             Menswear:
           </div>
           <p style={bodyStyle}>
-            Lightweight suits in linen, cotton, or tropical wool. Don’t shy
-            away from colors, patterns, or textured fabrics—ties are optional.
+            Breathable, linen or cotton suits, dress shirts, or sport coats. Don’t shy away from colors, patterns, or textured fabrics! Ties optional.
           </p>
 
           <div className="font-subheader" style={labelStyle}>
             Womenswear:
           </div>
           <p style={bodyStyle}>
-            Knee-length to long dresses or elevated jumpsuits. Florals, prints,
-            soft textures, and colorful styles are encouraged, along with
-            dressy sandals, heels, or elevated flats.
+            Knee-length to long dresses, or elevated jumpsuits. 
+            Florals, soft textures, and colorful styles are encouraged, along with dressy sandals, heels, or elevated flats.
           </p>
         </section>
 
@@ -100,26 +98,25 @@ export default function FAQsPage() {
           </div>
 
           <p style={{ ...bodyStyle, marginBottom: 15 }}>
-            The gardens will be open to guests starting at 5:00pm, and the
-            ceremony will begin promptly at 5:30pm.
+            The gardens will open to guests starting at 5:00pm, and the ceremony will begin promptly at 5:30pm.
           </p>
 
           <p style={bodyStyle}>                                                
-            Shuttles will be available from the parking lot to the garden
-            entrance.  If parking in Balboa Park, we recommend arriving 15 minutes early
-            to ensure you’ll have time to park and get to the venue.
+            If parking in Balboa Park, we recommend arriving 15 minutes early
+            to ensure you’ll have time get from the lot to the venue.
           </p>
         </section>
 
         {/* QUESTION 3 */}
         <section style={sectionSpacing}>
           <div className="font-subheader" style={questionStyle}>
-            Can I bring someone who isn’t on my invitation?
+            How should I get to the venue?
           </div>
 
           <p style={bodyStyle}>
-            Please reach out to us to see if we’ll have room to accommodate an
-            extra person.
+            Parking will be available at the Organ Pavillion Parking lot for guests choosing to drive themselves. 
+            A shuttle will be taking guests from the hotel to the venue, or a rideshare may drop guests off directly to the venue entrance. 
+            Please refer to the Travel section of our website for more details on transportation.
           </p>
         </section>
 
@@ -130,23 +127,20 @@ export default function FAQsPage() {
           </div>
 
           <p style={bodyStyle}>
-            We have reserved a hotel block for you at _____. Please refer to
-            the Travel section of our website for more details on
-            transportation or accommodations.
+            We have reserved a hotel block for you at the Marriott Marquis San Diego Marina. Please refer to
+            the Travel section of our website for more details on accommodations.
           </p>
         </section>
 
         {/* QUESTION 5 */}
-        <section>
+        <section style={sectionSpacing}>
           <div className="font-subheader" style={questionStyle}>
-            How should I get to the venue?
+            Can I bring someone who isn’t on my invitation?
           </div>
 
           <p style={bodyStyle}>
-            Parking will be available at _____. A cart will be available to
-            shuttle you down to the venue. Two shuttles will also be running
-            from _____ to the venue. An Uber may drop you off closer to the
-            entrance.
+            Please reach out to us to see if we’ll have room to accommodate an
+            extra guest.
           </p>
         </section>
       </Container>
