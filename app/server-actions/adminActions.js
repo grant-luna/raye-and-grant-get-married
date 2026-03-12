@@ -109,7 +109,7 @@ export async function createGuest({
   first_name,
   last_name,
   dietary_restrictions = null,
-  rsvp_status = null, // "yes" | "no" | null
+  rsvp_status = null,
 }) {
   if (!confirmsAdmin(admin_password)) return { ok: false };
 
@@ -120,14 +120,15 @@ export async function createGuest({
   const rs = rsvp_status == null ? null : String(rsvp_status).trim();
 
   if (!party_id) return { ok: false, error: "party_id required" };
-  if (!fn || !ln) return { ok: false, error: "First + last name required." };
-  if (rs && rs !== "yes" && rs !== "no")
+  if (!fn) return { ok: false, error: "First name required." };
+  if (rs && rs !== "yes" && rs !== "no") {
     return { ok: false, error: "rsvp_status must be yes/no/null" };
+  }
 
   const sql = sqlClient();
   const rows = await sql`
     INSERT INTO guests (first_name, last_name, party_id, dietary_restrictions, rsvp_status)
-    VALUES (${fn}, ${ln}, ${party_id}, ${dr}, ${rs})
+    VALUES (${fn}, ${ln || null}, ${party_id}, ${dr}, ${rs})
     RETURNING id, first_name, last_name, party_id, dietary_restrictions, rsvp_status
   `;
 
@@ -139,7 +140,7 @@ export async function updateGuest({
   guest_id,
   first_name,
   last_name,
-  party_id, // allow move
+  party_id,
   dietary_restrictions = null,
   rsvp_status = null,
 }) {
@@ -153,9 +154,10 @@ export async function updateGuest({
     dietary_restrictions == null ? null : String(dietary_restrictions).trim();
   const rs = rsvp_status == null ? null : String(rsvp_status).trim();
 
-  if (!fn || !ln) return { ok: false, error: "First + last name required." };
-  if (rs && rs !== "yes" && rs !== "no")
+  if (!fn) return { ok: false, error: "First name required." };
+  if (rs && rs !== "yes" && rs !== "no") {
     return { ok: false, error: "rsvp_status must be yes/no/null" };
+  }
 
   const sql = sqlClient();
 
@@ -163,7 +165,7 @@ export async function updateGuest({
     UPDATE guests
     SET
       first_name = ${fn},
-      last_name = ${ln},
+      last_name = ${ln || null},
       party_id = ${party_id ?? null},
       dietary_restrictions = ${dr},
       rsvp_status = ${rs}

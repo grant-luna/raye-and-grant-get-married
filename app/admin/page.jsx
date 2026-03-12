@@ -14,7 +14,7 @@ import {
 } from "../server-actions/adminActions";
 
 function fullName(g) {
-  return `${g.first_name} ${g.last_name}`.trim();
+  return `${g.first_name || ""} ${g.last_name || ""}`.trim();
 }
 
 /**
@@ -215,27 +215,28 @@ export default function AdminPage() {
   // Guest actions
   // -----------------------
   const onCreateGuest = async (partyId, e) => {
-    e.preventDefault();
-    const draft = newGuestByParty[partyId] || {};
-    const first = String(draft.first_name || "").trim();
-    const last = String(draft.last_name || "").trim();
-    if (!first || !last) return;
-
-    await createGuest({
-      admin_password: adminPassword,
-      party_id: partyId,
-      first_name: first,
-      last_name: last,
-      rsvp_status: null,
-      dietary_restrictions: null,
-    });
-
-    setNewGuestByParty((prev) => ({
-      ...prev,
-      [partyId]: { first_name: "", last_name: "" },
-    }));
-
-    await refresh();
+   e.preventDefault();
+   const draft = newGuestByParty[partyId] || {};
+   const first = String(draft.first_name || "").trim();
+   const last = String(draft.last_name || "").trim();
+    
+   if (!first) return;
+    
+   await createGuest({
+     admin_password: adminPassword,
+     party_id: partyId,
+     first_name: first,
+     last_name: last || null,
+     rsvp_status: null,
+     dietary_restrictions: null,
+   });
+  
+   setNewGuestByParty((prev) => ({
+     ...prev,
+     [partyId]: { first_name: "", last_name: "" },
+   }));
+  
+   await refresh();
   };
 
   const startEditGuest = (g) => {
