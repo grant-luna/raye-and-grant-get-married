@@ -172,7 +172,9 @@ export default function TravelPage() {
           </h2>
 
           <p className="font-subheader" style={subCopyStyle}>
-            We have reserved room blocks at the following hotels, both
+            We have reserved room blocks at the 
+            <br />
+            Marriott Marquis San Diego Marina
             <br />
             located approximately 10–15 minutes from our venue
           </p>
@@ -181,14 +183,7 @@ export default function TravelPage() {
             name="Marriott Marquis San Diego Marina"
             addressLine1="333 West Harbor Drive"
             addressLine2="San Diego, CA 92101"
-            description="A beautiful waterfront hotel in downtown San Diego with marina views and great on-site amenities. We’ll also be hosting our Welcome Party here, making it a fun and convenient home base for the weekend!"
-          />
-
-          <HotelBlock
-            name="Embassy Suites San Diego Bay Downtown"
-            addressLine1="601 Pacific Hwy"
-            addressLine2="San Diego, CA 92101"
-            description="A centrally located waterfront hotel offering spacious accommodations and beautiful views of the bay. With comfortable rooms and easy access to downtown San Diego, it’s a relaxed and convenient option for the wedding weekend."
+            description="A beautiful waterfront hotel in downtown San Diego with marina views and great on-site amenities."
           />
         </section>
 
@@ -222,7 +217,7 @@ export default function TravelPage() {
 
           <VenueDetail
             label="Parking:"
-            text="There will be parking available near the venue. Please note that it is approximately a 5–10 minute walk from the parking area to the venue entrance."
+            text="There will be parking available near the venue. Please note that it is approximately a 5–10 minute walk from the parking area to the venue entrance. Rideshare drop-offs and carpooling is encouraged."
           />
 
           <VenueDetail
