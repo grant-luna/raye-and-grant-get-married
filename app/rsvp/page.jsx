@@ -6,6 +6,7 @@ import {
   findPartyMatchByName,
   submitPartyRSVP,
 } from "../server-actions/rsvpActions";
+import Link from "next/link";
 
 function fullName(g) {
   return `${g.first_name} ${g.last_name}`.trim();
@@ -826,10 +827,30 @@ export default function RSVPPage() {
 
               <p
                 className="font-subheader"
-                style={{ ...centerCopyStyle, marginBottom: 18 }}
+                style={{ ...centerCopyStyle, marginBottom: 28 }}
               >
                 {thanksCopy.line2}
               </p>
+
+              <Link href="/">
+                <button
+                  type="button"
+                  style={{
+                    background: "transparent",
+                    border: `1px solid ${thinRule}`,
+                    color: ink,
+                    borderRadius: 999,
+                    padding: "12px 22px",
+                    fontFamily: "var(--font-body)",
+                    fontSize: 12,
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                  }}
+                >
+                  Head Back to the Homepage
+                </button>
+              </Link>
             </div>
           </>
         )}

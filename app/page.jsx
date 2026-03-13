@@ -125,7 +125,7 @@ export default function Page() {
                 travel information, and RSVP&apos;s.
               </p>
               <p style={{ fontSize: 16, marginBottom: 12 }}>
-                Please check back as we get closer to the date.
+                Please check back in as we get closer to the date for more information about the weekend.
               </p>
             </div>
 
