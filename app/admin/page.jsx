@@ -10,7 +10,7 @@ import {
   createGuest,
   updateGuest,
   deleteGuest,
-  importGuestsFromCsv, // ✅ make sure you added this in adminActions
+  importGuestsFromCsv,
 } from "../server-actions/adminActions";
 
 function fullName(g) {
@@ -51,12 +51,10 @@ function parseCsvToObjects(csvText) {
     }
 
     if ((c === "\n" || c === "\r") && !inQuotes) {
-      // handle CRLF
       if (c === "\r" && next === "\n") i++;
       row.push(field);
       field = "";
 
-      // ignore empty trailing lines
       if (row.some((v) => String(v || "").trim() !== "")) rows.push(row);
       row = [];
       continue;
@@ -65,7 +63,6 @@ function parseCsvToObjects(csvText) {
     field += c;
   }
 
-  // last field
   row.push(field);
   if (row.some((v) => String(v || "").trim() !== "")) rows.push(row);
 
@@ -114,7 +111,7 @@ export default function AdminPage() {
     party_id: "",
   });
 
-  // ✅ CSV import state
+  // CSV import state
   const [csvName, setCsvName] = useState("");
   const [csvHeaders, setCsvHeaders] = useState([]);
   const [csvRows, setCsvRows] = useState([]);
@@ -131,6 +128,12 @@ export default function AdminPage() {
   });
 
   const [defaultPartyName, setDefaultPartyName] = useState("Imported Guests");
+
+  // NEW: search / filter state
+  const [guestSearch, setGuestSearch] = useState("");
+  const [filterRsvp, setFilterRsvp] = useState("");
+  const [filterDietary, setFilterDietary] = useState("");
+  const [filterPartyId, setFilterPartyId] = useState("");
 
   const ink = "#544f44";
   const thinRule = "rgba(84, 79, 68, 0.35)";
@@ -154,6 +157,45 @@ export default function AdminPage() {
   const partyOptions = useMemo(() => {
     return (parties || []).map((p) => ({ id: p.id, name: p.name }));
   }, [parties]);
+
+  // NEW: flattened guests for search/filter UI
+  const allGuests = useMemo(() => {
+    return (parties || []).flatMap((party) =>
+      (party.guests || []).map((guest) => ({
+        ...guest,
+        party_name: party.name || "",
+      }))
+    );
+  }, [parties]);
+
+  const filteredGuests = useMemo(() => {
+    const q = guestSearch.trim().toLowerCase();
+
+    return allGuests.filter((g) => {
+      const guestName = fullName(g).toLowerCase();
+      const partyName = String(g.party_name || "").toLowerCase();
+      const diet = String(g.dietary_restrictions || "").trim();
+      const rsvp = String(g.rsvp_status || "").toLowerCase();
+
+      const matchesSearch =
+        !q ||
+        guestName.includes(q) ||
+        partyName.includes(q);
+
+      const matchesRsvp =
+        !filterRsvp || rsvp === filterRsvp;
+
+      const matchesDietary =
+        !filterDietary ||
+        (filterDietary === "has_dietary" && !!diet) ||
+        (filterDietary === "no_dietary" && !diet);
+
+      const matchesParty =
+        !filterPartyId || String(g.party_id) === String(filterPartyId);
+
+      return matchesSearch && matchesRsvp && matchesDietary && matchesParty;
+    });
+  }, [allGuests, guestSearch, filterRsvp, filterDietary, filterPartyId]);
 
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
@@ -215,28 +257,28 @@ export default function AdminPage() {
   // Guest actions
   // -----------------------
   const onCreateGuest = async (partyId, e) => {
-   e.preventDefault();
-   const draft = newGuestByParty[partyId] || {};
-   const first = String(draft.first_name || "").trim();
-   const last = String(draft.last_name || "").trim();
-    
-   if (!first) return;
-    
-   await createGuest({
-     admin_password: adminPassword,
-     party_id: partyId,
-     first_name: first,
-     last_name: last || null,
-     rsvp_status: null,
-     dietary_restrictions: null,
-   });
-  
-   setNewGuestByParty((prev) => ({
-     ...prev,
-     [partyId]: { first_name: "", last_name: "" },
-   }));
-  
-   await refresh();
+    e.preventDefault();
+    const draft = newGuestByParty[partyId] || {};
+    const first = String(draft.first_name || "").trim();
+    const last = String(draft.last_name || "").trim();
+
+    if (!first) return;
+
+    await createGuest({
+      admin_password: adminPassword,
+      party_id: partyId,
+      first_name: first,
+      last_name: last || null,
+      rsvp_status: null,
+      dietary_restrictions: null,
+    });
+
+    setNewGuestByParty((prev) => ({
+      ...prev,
+      [partyId]: { first_name: "", last_name: "" },
+    }));
+
+    await refresh();
   };
 
   const startEditGuest = (g) => {
@@ -325,7 +367,6 @@ export default function AdminPage() {
       setCsvHeaders(parsed.headers);
       setCsvRows(parsed.rows);
 
-      // auto-suggest mappings by common header names
       const lower = parsed.headers.map((h) => h.toLowerCase().trim());
       const pick = (candidates) => {
         const idx = lower.findIndex((h) => candidates.includes(h));
@@ -367,7 +408,6 @@ export default function AdminPage() {
       return;
     }
 
-    // guard: prevent accidental massive uploads
     if (csvRows.length > 5000) {
       setCsvError(
         "This file has more than 5,000 rows. Please split it into smaller files before importing."
@@ -565,7 +605,184 @@ export default function AdminPage() {
           )}
         </div>
 
-        {/* ✅ CSV Import */}
+        {/* NEW: Guest Search / Filter */}
+        <section
+          style={{
+            maxWidth: 820,
+            margin: "0 auto 34px",
+            padding: "18px 16px",
+            borderTop: `1px solid ${thinRule}`,
+            borderBottom: `1px solid ${thinRule}`,
+          }}
+        >
+          <p
+            className="font-subheader"
+            style={{ margin: "0 0 14px", fontSize: 12, letterSpacing: "0.18em", opacity: 0.8 }}
+          >
+            Search & Filter Guests
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
+              alignItems: "end",
+            }}
+          >
+            <div>
+              <p className="font-subheader" style={labelStyle}>Search Name / Party</p>
+              <input
+                value={guestSearch}
+                onChange={(e) => setGuestSearch(e.target.value)}
+                placeholder="Search guest or party..."
+                style={{ ...fieldStyle, maxWidth: "100%" }}
+              />
+            </div>
+
+            <div>
+              <p className="font-subheader" style={labelStyle}>RSVP Status</p>
+              <select
+                value={filterRsvp}
+                onChange={(e) => setFilterRsvp(e.target.value)}
+                style={{ ...fieldStyle, maxWidth: "100%" }}
+              >
+                <option value="">All</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div>
+              <p className="font-subheader" style={labelStyle}>Dietary Restrictions</p>
+              <select
+                value={filterDietary}
+                onChange={(e) => setFilterDietary(e.target.value)}
+                style={{ ...fieldStyle, maxWidth: "100%" }}
+              >
+                <option value="">All</option>
+                <option value="has_dietary">Has dietary restrictions</option>
+                <option value="no_dietary">No dietary restrictions</option>
+              </select>
+            </div>
+
+            <div>
+              <p className="font-subheader" style={labelStyle}>Party</p>
+              <select
+                value={filterPartyId}
+                onChange={(e) => setFilterPartyId(e.target.value)}
+                style={{ ...fieldStyle, maxWidth: "100%" }}
+              >
+                <option value="">All parties</option>
+                {partyOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              type="button"
+              style={btnStyle(false)}
+              onClick={() => {
+                setGuestSearch("");
+                setFilterRsvp("");
+                setFilterDietary("");
+                setFilterPartyId("");
+              }}
+            >
+              Clear Filters
+            </button>
+
+            <div
+              className="font-subheader"
+              style={{ fontSize: 11, letterSpacing: "0.16em", opacity: 0.6, textTransform: "uppercase" }}
+            >
+              Showing {filteredGuests.length} of {allGuests.length} guests
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            {filteredGuests.length === 0 ? (
+              <div
+                className="font-subheader"
+                style={{ fontSize: 12, letterSpacing: "0.16em", opacity: 0.45 }}
+              >
+                No guests match your filters.
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {filteredGuests.slice(0, 100).map((g) => (
+                  <div
+                    key={`search-${g.id}`}
+                    style={{
+                      padding: "12px 12px",
+                      border: `1px solid ${thinRule}`,
+                      borderRadius: 14,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <div style={{ minWidth: 260 }}>
+                      <div
+                        className="font-subheader"
+                        style={{
+                          fontSize: 13,
+                          letterSpacing: "0.16em",
+                          textTransform: "uppercase",
+                          opacity: 0.85,
+                        }}
+                      >
+                        {fullName(g)}
+                      </div>
+
+                      <div
+                        className="font-subheader"
+                        style={{
+                          fontSize: 11,
+                          letterSpacing: "0.16em",
+                          textTransform: "uppercase",
+                          opacity: 0.5,
+                          marginTop: 6,
+                          lineHeight: 1.8,
+                        }}
+                      >
+                        Party: {g.party_name || "—"} · RSVP: {g.rsvp_status || "—"}
+                        {g.dietary_restrictions ? ` · Diet: ${g.dietary_restrictions}` : ""}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <button type="button" style={btnStyle(false)} onClick={() => startEditGuest(g)}>
+                        Edit
+                      </button>
+                      <button type="button" style={btnStyle(false)} onClick={() => onDeleteGuest(g.id)}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredGuests.length > 100 && (
+                  <div
+                    className="font-subheader"
+                    style={{ fontSize: 11, letterSpacing: "0.16em", opacity: 0.45, textTransform: "uppercase" }}
+                  >
+                    Showing first 100 matches
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* CSV Import */}
         <section
           style={{
             maxWidth: 820,
@@ -620,7 +837,6 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Mapping UI */}
           {csvHeaders.length > 0 && (
             <div style={{ marginTop: 18 }}>
               <div
@@ -722,7 +938,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Preview */}
               <div style={{ marginTop: 16 }}>
                 <p className="font-subheader" style={{ ...labelStyle, marginBottom: 10 }}>
                   Preview (first 3 rows)
@@ -855,7 +1070,6 @@ export default function AdminPage() {
                 borderBottom: `1px solid ${thinRule}`,
               }}
             >
-              {/* Party header row */}
               <div
                 style={{
                   display: "flex",
@@ -930,7 +1144,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Add guest */}
               <div style={{ marginTop: 16 }}>
                 <p className="font-subheader" style={{ margin: "0 0 10px", fontSize: 12, letterSpacing: "0.18em", opacity: 0.7 }}>
                   Add Guest
@@ -969,7 +1182,6 @@ export default function AdminPage() {
                 </form>
               </div>
 
-              {/* Guests list */}
               <div style={{ marginTop: 18 }}>
                 <p className="font-subheader" style={{ margin: "0 0 10px", fontSize: 12, letterSpacing: "0.18em", opacity: 0.7 }}>
                   Guests
