@@ -10,17 +10,17 @@ export default function SchedulePage() {
 
   const sectionTitleStyle = {
     margin: 0,
+    marginBottom: 18, // increased space below title
     color: ink,
     fontSize: "clamp(44px, 6.5vw, 54px)",
     lineHeight: 1.05,
   };
 
-  // ✅ Venue names (and now dates too)
   const venueNameStyle = {
     fontSize: "clamp(16px, 4.2vw, 20px)",
     letterSpacing: "0.06em",
     opacity: 0.92,
-    marginBottom: 0.5,
+    marginBottom: 10,
     color: ink,
   };
 
@@ -46,7 +46,7 @@ export default function SchedulePage() {
       aria-hidden
       style={{
         width: "min(200px, 30vw)",
-        height: .75,
+        height: 0.75,
         background: thinRule,
         margin: "clamp(34px, 6vw, 54px) auto",
       }}
@@ -85,35 +85,33 @@ export default function SchedulePage() {
 
         {/* SECTION 1 */}
         <section>
+          <div className="font-subheader" style={venueNameStyle}>
+            Aug 21st, 2026
+          </div>
+
           <h2 className="font-header font-header--small" style={sectionTitleStyle}>
             The Welcome
           </h2>
 
-          <div
-            className="font-subheader"
-            style={{ ...venueNameStyle, marginTop: 7.5, marginBottom: 0 }}
-          >
-            Aug 21st, 2026
+          <div style={addressStyle}>
+            Please check back in closer to the wedding weekend
+            <br />
+            for details about our welcome celebration!
           </div>
-                
-          {/* ✅ Temporary message */}
-          <p className="font-subheader" style={subCopyStyle}>
-            Please check back in closer to the wedding weekend for details about our welcome celebration!
-          </p>
-                
+
           {/*
             ORIGINAL WELCOME DETAILS — SAVED FOR LATER
-          
-            <p className="font-subheader" style={subCopyStyle}>
+
+            <div style={addressStyle}>
               Welcome to San Diego! Join us
               <br />
               for drinks and appetizers at
-            </p>
-          
-            <div className="font-subheader" style={venueNameStyle}>
-              Carte Hotel
             </div>
-          
+
+            <p className="font-subheader" style={{ ...subCopyStyle, marginTop: ".3rem" }}>
+              Carte Hotel
+            </p>
+
             <div style={addressStyle}>
               2215 Pan American Road. E.
               <br />
@@ -126,27 +124,23 @@ export default function SchedulePage() {
 
         {/* SECTION 2 */}
         <section>
-          <h2 className="font-header font-header--small" style={sectionTitleStyle}>
-            The Day of
-          </h2>
-
-          {/* ✅ Date now matches venue styling */}
-          <div
-            className="font-subheader"
-            style={{ ...venueNameStyle, marginTop: 7.5, marginBottom: 0 }}
-          >
+          <div className="font-subheader" style={venueNameStyle}>
             Aug 22nd, 2026
           </div>
 
-          <p className="font-subheader" style={subCopyStyle}>
+          <h2 className="font-header font-header--small" style={sectionTitleStyle}>
+            The Day Of
+          </h2>
+
+          <div style={addressStyle}>
             The Ceremony, Cocktail Hour, and
             <br />
             Reception will be held at
-          </p>
-
-          <div className="font-subheader" style={venueNameStyle}>
-            The Japanese Friendship Gardens
           </div>
+
+          <p className="font-subheader" style={{ ...subCopyStyle, marginTop: ".3rem" }}>
+            The Japanese Friendship Gardens
+          </p>
 
           <div style={addressStyle}>
             2215 Pan American Road. E.
@@ -179,21 +173,19 @@ export default function SchedulePage() {
 
         {/* SECTION 3 */}
         <section>
+          <div className="font-subheader" style={venueNameStyle}>
+            Aug 23rd, 2026
+          </div>
+
           <h2 className="font-header font-header--small" style={sectionTitleStyle}>
             The Goodbye
           </h2>
 
-          {/* ✅ Date now matches venue styling */}
-          <div
-            className="font-subheader"
-            style={{ ...venueNameStyle, marginTop: 7.5, marginBottom: 0 }}
-          >
-            Aug 23rd, 2026
+          <div style={addressStyle}>
+            Please check back in closer to the wedding weekend
+            <br />
+            for details about our farewell celebration!
           </div>
-
-          <p className="font-subheader" style={subCopyStyle}>
-            Please check back in closer to the wedding weekend for details about our welcome celebration!
-          </p>
         </section>
       </Container>
     </main>
