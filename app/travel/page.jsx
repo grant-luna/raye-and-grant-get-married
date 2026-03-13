@@ -1,6 +1,7 @@
 "use client";
 
 import Container from "react-bootstrap/Container";
+import Link from "next/link";
 
 export default function TravelPage() {
   const ink = "#544f44";
@@ -25,15 +26,6 @@ export default function TravelPage() {
     textAlign: "center",
     width: "100%",
     transform: "translateX(4px)",
-  };
-
-  const venueNameStyle = {
-    fontSize: "clamp(16px, 4.2vw, 20px)",
-    letterSpacing: "0.06em",
-    opacity: 0.92,
-    marginBottom: 0,
-    color: ink,
-    textTransform: "uppercase",
   };
 
   const subCopyStyle = {
@@ -65,6 +57,21 @@ export default function TravelPage() {
     textAlign: "center",
     maxWidth: 680,
     margin: "0 auto",
+  };
+
+  const buttonStyle = {
+    display: "inline-block",
+    marginTop: 26,
+    padding: "12px 22px",
+    border: `1px solid ${ink}`,
+    borderRadius: 999,
+    color: ink,
+    textDecoration: "none",
+    textTransform: "uppercase",
+    letterSpacing: "0.16em",
+    fontSize: 12,
+    background: "transparent",
+    transition: "transform 180ms ease",
   };
 
   const Divider = () => (
@@ -106,14 +113,9 @@ export default function TravelPage() {
             Flying In
           </h2>
 
-          <div style={addressStyle}>
-            The closest airport is
-          </div>
+          <div style={addressStyle}>The closest airport is</div>
 
-          <p
-            className="font-subheader"
-            style={{ ...subCopyStyle, marginTop: ".3rem" }}
-          >
+          <p className="font-subheader" style={{ ...subCopyStyle, marginTop: ".3rem" }}>
             San Diego International Airport (SAN)
           </p>
 
@@ -132,14 +134,9 @@ export default function TravelPage() {
             Hotels
           </h2>
 
-          <div style={addressStyle}>
-            We have reserved room blocks at
-          </div>
+          <div style={addressStyle}>We have reserved room blocks at</div>
 
-          <p
-            className="font-subheader"
-            style={{ ...subCopyStyle, marginTop: ".3rem" }}
-          >
+          <p className="font-subheader" style={{ ...subCopyStyle, marginTop: ".3rem" }}>
             Marriott Marquis San Diego Marina
           </p>
 
@@ -151,6 +148,18 @@ export default function TravelPage() {
 
           <div style={{ ...addressStyle, marginTop: 14 }}>
             Located approximately 10–15 minutes from our venue
+          </div>
+
+          {/* BUTTON */}
+          <div>
+            <Link
+              href="https://book.passkey.com/go/rayandgrantwedding"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={buttonStyle}
+            >
+              Please Click Here to Reserve a Room
+            </Link>
           </div>
         </section>
 
@@ -172,48 +181,32 @@ export default function TravelPage() {
             the gardens before the ceremony
           </div>
 
-          <p
-            className="font-subheader"
-            style={{ ...subCopyStyle, marginTop: "1.2rem" }}
-          >
+          <p className="font-subheader" style={{ ...subCopyStyle, marginTop: "1.2rem" }}>
             Parking
           </p>
 
           <div style={bodyStyle}>
             There will be parking available at the Organ Pavilion Parking Lot,
-            approximately a 5–10 minute walk from the venue entrance. There will
-            be a small shuttle taking people from the lot to the venue entrance.
+            approximately a 5–10 minute walk from the venue entrance.
           </div>
 
-          <p
-            className="font-subheader"
-            style={{ ...subCopyStyle, marginTop: "1.6rem" }}
-          >
+          <p className="font-subheader" style={{ ...subCopyStyle, marginTop: "1.6rem" }}>
             Rideshare
           </p>
 
           <div style={bodyStyle}>
-            Rideshares like Uber or Lyft can drop guests off directly at the
-            venue entrance.
-            <br />
-            Please use the following address for rideshare drop-off:
+            Rideshares like Uber or Lyft can drop guests off directly at the venue entrance.
             <br />
             2220 Paseo De Oro, San Diego, CA 92101
           </div>
 
-          <p
-            className="font-subheader"
-            style={{ ...subCopyStyle, marginTop: "1.6rem" }}
-          >
+          <p className="font-subheader" style={{ ...subCopyStyle, marginTop: "1.6rem" }}>
             Shuttle
           </p>
 
           <div style={bodyStyle}>
-            We will be providing a shuttle service from the Marriott Marquis San
-            Diego Marina to the venue, as well as return shuttles back to the
-            hotel at the end of the evening. Shuttles will drop guests off near
-            the venue entrance. Departure and pick-up times will be shared closer
-            to the wedding date.
+            We will be providing a shuttle service from the Marriott Marquis San Diego Marina
+            to the venue and return shuttles back to the hotel at the end of the evening.
           </div>
         </section>
       </Container>
