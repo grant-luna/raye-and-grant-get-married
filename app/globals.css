@@ -6,6 +6,21 @@ html,
 body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+   
+html,
+body {
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -345,7 +360,7 @@ h6 {
 
   .home-hero__date {
     font-size: 15px;
-    margin-bottom: 0px;
+    margin-bottom: 5px;
   }
 
   .home-hero__visual {
