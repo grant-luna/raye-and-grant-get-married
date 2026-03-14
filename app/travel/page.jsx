@@ -25,11 +25,7 @@ export default function TravelPage() {
   const paper = "#f8f5f1";
 
   const mainStyle = {
-    minHeight: "100svh",
-    background: `
-      radial-gradient(circle at top, rgba(255,255,255,0.85), rgba(248,245,241,0.95)),
-      ${paper}
-    `,
+    minHeight: "100svh",    
     position: "relative",
     overflow: "hidden",
   };
