@@ -174,10 +174,9 @@ h6 {
   max-width: 1080px;
   margin: 0 auto;
   text-align: center;
-
   --hero-image-width: 900px;
-  --hero-image-height: 430px;
-  --hero-button-overlap: 80px;
+  --hero-image-height: 250px;
+  --hero-button-overlap: 30px;
 }
 
 .home-hero__kicker {
@@ -198,7 +197,7 @@ h6 {
   font-size: clamp(20px, 2vw, 24px);
   letter-spacing: 0.05em;
   color: #b04a78;
-  margin-bottom: 18px;
+  margin-bottom: 6px;
 }
 
 .home-hero__visual {
@@ -211,6 +210,7 @@ h6 {
   position: relative;
   width: 100%;
   height: var(--hero-image-height);
+  overflow: visible;
 }
 
 .home-hero__image {
@@ -281,7 +281,7 @@ h6 {
   .home-hero__inner {
     --hero-image-width: 620px;
     --hero-image-height: 300px;
-    --hero-button-overlap: 100px;
+    --hero-button-overlap: 60px;
   }
 
   .home-hero__kicker {
@@ -298,7 +298,7 @@ h6 {
 
   .home-hero__date {
     font-size: 16px;
-    margin-bottom: 14px;
+    margin-bottom: 6px;
   }
 
   .home-hero__button {
@@ -345,7 +345,25 @@ h6 {
 
   .home-hero__date {
     font-size: 15px;
-    margin-bottom: 12px;
+    margin-bottom: 0px;
+  }
+
+  .home-hero__visual {
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    transform: none;
+  }
+
+  .home-hero__image-frame {
+    width: 135vw;
+    height: 280px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .home-hero__button-row {
+    margin-top: -34px;
   }
 
   .home-hero__button {
