@@ -56,8 +56,7 @@ export default function SchedulePage() {
   return (
     <main
       style={{
-        minHeight: "100svh",
-        backgroundColor: "#fbfaf7",
+        minHeight: "100svh",        
         display: "flex",
         alignItems: "flex-start",
       }}

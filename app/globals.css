@@ -14,6 +14,10 @@ body {
   color: #544f44;
   background-color: #fbfaf7;
   line-height: 1.6;
+  background-image: url("/textured-background.png");
+  background-repeat: repeat;
+  background-size: 600px auto;
+  background-position: top left;
 }
 
 /* Script headers (base) */
@@ -37,7 +41,7 @@ body {
   font-size: 48px;
 }
 
-/* Mobile tuning (optional but recommended) */
+/* Mobile tuning */
 @media (max-width: 576px) {
   .font-header {
     font-size: 48px;
@@ -80,7 +84,7 @@ h6 {
   font-family: var(--font-body);
 }
 
-/* Desktop: centered horizontal nav */
+/* Desktop nav */
 @media (min-width: 768px) {
   .wedding-nav {
     display: flex;
@@ -91,7 +95,7 @@ h6 {
   }
 }
 
-/* Mobile: clean stacked menu */
+/* Mobile nav */
 @media (max-width: 767.98px) {
   .wedding-nav {
     display: flex;
@@ -102,7 +106,6 @@ h6 {
     padding-bottom: 18px;
   }
 
-  /* Make tap targets nicer on mobile */
   .wedding-nav .nav-link {
     padding: 10px 0;
   }
@@ -119,7 +122,6 @@ h6 {
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* Desktop hover only */
 @media (hover: hover) {
   .wedding-link:hover {
     transform: scale(1.35);
@@ -129,7 +131,6 @@ h6 {
 
 .rsvp-button {
   display: inline-block;
-  margin-top: 10px;
   padding: 10px 26px;
   border: 1.5px solid #544f44;
   color: #544f44;
@@ -141,11 +142,9 @@ h6 {
   font-size: 13px;
   width: 200px;
   margin: 10px auto;
-
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* Desktop hover */
 @media (hover: hover) {
   .rsvp-button:hover {
     transform: scale(1.08);
@@ -153,7 +152,220 @@ h6 {
   }
 }
 
-/* Mobile tap (press effect) */
 .rsvp-button:active {
   transform: scale(1.08);
+}
+
+/* =========================
+   HOMEPAGE HERO
+   ========================= */
+
+.home-page {
+  min-height: 100svh;
+}
+
+.home-hero {
+  width: 100%;
+  padding: 40px 18px 48px;
+}
+
+.home-hero__inner {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  text-align: center;
+
+  --hero-image-width: 900px;
+  --hero-image-height: 430px;
+  --hero-button-overlap: 80px;
+}
+
+.home-hero__kicker {
+  font-size: clamp(16px, 1.8vw, 21px);
+  margin-bottom: 28px;
+  letter-spacing: 0.11em;
+  color: #5b554d;
+}
+
+.home-hero__title {
+  font-size: clamp(52px, 6vw, 60px);
+  line-height: 0.95;
+  margin-bottom: 18px;
+  color: #9a6677;
+}
+
+.home-hero__date {
+  font-size: clamp(20px, 2vw, 24px);
+  letter-spacing: 0.05em;
+  color: #b04a78;
+  margin-bottom: 18px;
+}
+
+.home-hero__visual {
+  width: 100%;
+  max-width: var(--hero-image-width);
+  margin: 0 auto;
+}
+
+.home-hero__image-frame {
+  position: relative;
+  width: 100%;
+  height: var(--hero-image-height);
+}
+
+.home-hero__image {
+  object-fit: contain;
+  object-position: center;
+}
+
+.home-hero__button-row {
+  margin-top: calc(var(--hero-button-overlap) * -1);
+  position: relative;
+  z-index: 2;
+}
+
+.home-hero__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: #b0065d;
+  color: #f8eef3;
+  text-decoration: none;
+  padding: 10px 32px 11px;
+  border-radius: 10px;
+  font-family: var(--font-subheader);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+@media (hover: hover) {
+  .home-hero__button:hover {
+    transform: scale(1.04);
+    opacity: 0.94;
+  }
+}
+
+.home-hero__button:active {
+  transform: scale(1.03);
+}
+
+.home-hero__copy {
+  max-width: 760px;
+  margin: 22px auto 0;
+  padding: 0 10px;
+}
+
+.home-hero__text {
+  font-size: clamp(18px, 1.7vw, 21px);
+  line-height: 1.7;
+  margin-bottom: 12px;
+  color: #9b9388;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.home-hero__text--last {
+  margin-top: 14px;
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .home-hero {
+    padding: 48px 18px 36px;
+  }
+
+  .home-hero__inner {
+    --hero-image-width: 620px;
+    --hero-image-height: 300px;
+    --hero-button-overlap: 100px;
+  }
+
+  .home-hero__kicker {
+    font-size: 15px;
+    margin-bottom: 18px;
+    letter-spacing: 0.09em;
+  }
+
+  .home-hero__title {
+    font-size: clamp(34px, 13vw, 52px);
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .home-hero__date {
+    font-size: 16px;
+    margin-bottom: 14px;
+  }
+
+  .home-hero__button {
+    padding: 9px 22px 10px;
+    font-size: 16px;
+    border-radius: 9px;
+  }
+
+  .home-hero__copy {
+    margin-top: 18px;
+  }
+
+  .home-hero__text {
+    font-size: 16px;
+    line-height: 1.75;
+  }
+
+  .home-hero__text--last {
+    margin-top: 12px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .home-hero {
+    padding: 42px 16px 28px;
+  }
+
+  .home-hero__inner {
+    --hero-image-width: 100%;
+    --hero-image-height: 210px;
+    --hero-button-overlap: 40px;
+  }
+
+  .home-hero__kicker {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+
+  .home-hero__title {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .home-hero__date {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .home-hero__button {
+    padding: 8px 18px 9px;
+    font-size: 15px;
+    border-radius: 9px;
+    max-width: calc(100vw - 120px);
+  }
+
+  .home-hero__copy {
+    margin-top: 16px;
+    padding: 0 6px;
+  }
+
+  .home-hero__text {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .home-hero__text--last {
+    margin-top: 10px;
+  }
 }
