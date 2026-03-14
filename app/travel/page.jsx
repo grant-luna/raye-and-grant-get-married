@@ -22,10 +22,9 @@ export default function TravelPage() {
   const softInk = "rgba(106, 98, 88, 0.78)";
   const headingInk = "#5e564d";
   const accent = "#8f0f4f";
-  const paper = "#f8f5f1";
 
   const mainStyle = {
-    minHeight: "100svh",    
+    minHeight: "100svh",
     position: "relative",
     overflow: "hidden",
   };
@@ -43,7 +42,7 @@ export default function TravelPage() {
     margin: 0,
     color: headingInk,
     textAlign: "center",
-    fontSize: isMobile ? "34px" : "44px",
+    fontSize: isMobile ? "38px" : "48px",
     lineHeight: 1.08,
     fontWeight: 400,
   };
@@ -52,7 +51,7 @@ export default function TravelPage() {
     margin: 0,
     color: headingInk,
     textAlign: "center",
-    fontSize: isMobile ? "28px" : "34px",
+    fontSize: isMobile ? "31px" : "38px",
     lineHeight: 1.1,
     fontWeight: 400,
   };
@@ -139,9 +138,9 @@ export default function TravelPage() {
         <div
           style={{
             position: "absolute",
-            top: isMobile ? "110px" : "150px",
-            right: isMobile ? "12px" : "40px",
-            width: isMobile ? "110px" : "220px",
+            top: isMobile ? "100px" : "142px",
+            right: isMobile ? "8px" : "32px",
+            width: isMobile ? "132px" : "250px",
             opacity: 0.82,
             pointerEvents: "none",
           }}
